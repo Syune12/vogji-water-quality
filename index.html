@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<title>Ողջի գետի ջրի որակի վերլուծություն</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{font-family:Arial;background:#f4f6f8;margin:0}
+header{background:#0b7285;color:white;padding:20px;text-align:center}
+section{background:white;margin:15px;padding:20px;border-radius:8px}
+#map{height:350px}
+footer{text-align:center;background:#dee2e6;padding:10px}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Ողջի գետի ջրի որակի վերլուծություն</h1>
+<p>Նմուշառման կետ՝ 39°9'4.51"N, 46°11'11.79"E</p>
+</header>
+
+<section>
+<h2>📍 Քարտեզ</h2>
+<div id="map"></div>
+</section>
+
+<section>
+<h2>📊 Ջրի որակի փոփոխություն</h2>
+<canvas id="chart"></canvas>
+</section>
+
+<section>
+<h2>🧪 Ջրի որակի դաս</h2>
+<b>II դաս — Լավ որակ</b>
+</section>
+
+<section>
+<h2>🤖 AI վերլուծություն</h2>
+Շաբաթական՝ կայուն վիճակ<br>
+Ամսական՝ մետաղների նվազում<br>
+Տարեկան՝ II–III դասի պահպանություն
+</section>
+
+<footer>
+© 2026 — Ողջի գետի ջրի մոնիթորինգ
+</footer>
+
+<script>
+const map = L.map('map').setView([39.15125,46.18661],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.marker([39.15125,46.18661]).addTo(map);
+
+new Chart(document.getElementById("chart"),{
+ type:"line",
+ data:{
+  labels:["pH","NO3-","SO4","TDS","Fe"],
+  datasets:[
+   {label:"05/10/21",data:[8.142,16.6,284,460,0.32],borderColor:"blue"},
+   {label:"11/22/21",data:[8.129,17.46,265.9,496,0.077],borderColor:"green"}
+  ]
+ }
+});
+</script>
+
+</body>
+</html>

@@ -6,13 +6,15 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0}
 header{background:#0b7285;color:white;padding:20px;text-align:center}
-section{background:white;margin:15px;padding:20px;border-radius:8px}
+section{background:white;margin:15px;padding:20px;border-radius:8px;overflow-x:auto}
 #map{height:350px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid #ccc;padding:4px;text-align:center}
+th{background:#e9ecef}
 footer{text-align:center;background:#dee2e6;padding:10px}
 </style>
 </head>
@@ -21,7 +23,10 @@ footer{text-align:center;background:#dee2e6;padding:10px}
 
 <header>
 <h1>Ողջի գետի ջրի որակի վերլուծություն</h1>
-<p>Նմուշառման կետ՝ 39°9'4.51"N, 46°11'11.79"E</p>
+<p>
+Նմուշառման կետ՝ <b>Հ.Ֆ</b><br>
+Կոորդինատներ՝ 39°9'10.77"N, 46°8'55.86"E
+</p>
 </header>
 
 <section>
@@ -30,20 +35,44 @@ footer{text-align:center;background:#dee2e6;padding:10px}
 </section>
 
 <section>
-<h2>📊 Ջրի որակի փոփոխություն</h2>
-<canvas id="chart"></canvas>
+<h2>📊 Քիմիական վերլուծության արդյունքներ (2025թ․)</h2>
+
+<table>
+<tr>
+<th>№</th><th>Ցուցանիշ</th>
+<th>05.01</th><th>07.01</th><th>08.01</th>
+<th>09.01</th><th>12.01</th><th>13.01</th>
+</tr>
+
+<tr><td>1</td><td>pH</td><td>8.6</td><td>8.2</td><td>8.1</td><td>7.6</td><td>8.7</td><td>8.3</td></tr>
+<tr><td>4</td><td>Al (մգ/լ)</td><td>2.740</td><td>0.009</td><td>0.131</td><td>0.236</td><td>0.244</td><td>0.046</td></tr>
+<tr><td>5</td><td>As (մգ/լ)</td><td>0.034</td><td>0.000</td><td>0.012</td><td>0.021</td><td>0.006</td><td>0.000</td></tr>
+<tr><td>9</td><td>Ca (մգ/լ)</td><td>111.006</td><td>73.143</td><td>77.379</td><td>364.060</td><td>80.753</td><td>67.839</td></tr>
+<tr><td>14</td><td>Fe (մգ/լ)</td><td>9.053</td><td>0.000</td><td>0.181</td><td>0.000</td><td>0.146</td><td>0.000</td></tr>
+<tr><td>20</td><td>Mn (մգ/լ)</td><td>0.234</td><td>0.041</td><td>0.054</td><td>0.134</td><td>0.040</td><td>0.035</td></tr>
+<tr><td>21</td><td>Mo (մգ/լ)</td><td>0.342</td><td>0.218</td><td>0.222</td><td>1.315</td><td>0.264</td><td>0.114</td></tr>
+<tr><td>22</td><td>Na (մգ/լ)</td><td>87.749</td><td>58.475</td><td>44.148</td><td>180.881</td><td>74.761</td><td>36.777</td></tr>
+<tr><td>25</td><td>Pb (մգ/լ)</td><td>0.030</td><td>0.043</td><td>0.007</td><td>0.000</td><td>0.001</td><td>0.006</td></tr>
+<tr><td>35</td><td>Zn (մգ/լ)</td><td>0.024</td><td>0.010</td><td>0.001</td><td>0.000</td><td>0.001</td><td>0.000</td></tr>
+</table>
+
+<p style="margin-top:10px">
+⚠️ Նշում․ Աղյուսակում ներկայացված են հիմնական ազդեցիկ ցուցանիշները։  
+Ամբողջ 37 ցուցանիշները կարող ենք ավելացնել հաջորդ քայլում։
+</p>
 </section>
 
 <section>
-<h2>🧪 Ջրի որակի դաս</h2>
-<b>II դաս — Լավ որակ</b>
+<h2>🧪 Ջրի որակի ընդհանուր գնահատում</h2>
+<b>II–III դաս</b> — ընդհանուր առմամբ բավարար, առանձին մետաղների գերազանցումներով
 </section>
 
 <section>
-<h2>🤖 AI վերլուծություն</h2>
-Շաբաթական՝ կայուն վիճակ<br>
-Ամսական՝ մետաղների նվազում<br>
-Տարեկան՝ II–III դասի պահպանություն
+<h2>🤖 Վերլուծական եզրակացություն</h2>
+• pH-ը թույլ ալկալային է<br>
+• Fe, Mn, Mo որոշ օրերին գերազանցում են II դասը<br>
+• Ընդհանուր հանքայնացումը միջին է<br>
+• Պահանջվում է շարունակական մոնիթորինգ
 </section>
 
 <footer>
@@ -51,21 +80,12 @@ footer{text-align:center;background:#dee2e6;padding:10px}
 </footer>
 
 <script>
-const map = L.map('map').setView([39.15125,46.18661],13);
+const map = L.map('map').setView([39.15299,46.14885],13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-L.marker([39.15125,46.18661]).addTo(map);
-
-new Chart(document.getElementById("chart"),{
- type:"line",
- data:{
-  labels:["pH","NO3-","SO4","TDS","Fe"],
-  datasets:[
-   {label:"05/10/21",data:[8.142,16.6,284,460,0.32],borderColor:"blue"},
-   {label:"11/22/21",data:[8.129,17.46,265.9,496,0.077],borderColor:"green"}
-  ]
- }
-});
+L.marker([39.15299,46.14885]).addTo(map)
+ .bindPopup("Կետ՝ Հ.Ֆ").openPopup();
 </script>
 
 </body>
 </html>
+

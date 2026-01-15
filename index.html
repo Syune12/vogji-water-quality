@@ -2,131 +2,154 @@
 <html lang="hy">
 <head>
 <meta charset="UTF-8">
-<title>Ողջի գետի ջրի որակի դասային վերլուծություն</title>
+<title>Ողջի գետի ջրի որակի վերլուծություն</title>
 
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { font-family: Arial; background:#f4f6f8; margin:0; }
-header { background:#0b7285; color:white; padding:20px; text-align:center; }
-section { background:white; margin:15px; padding:20px; border-radius:8px; }
-h2 { color:#0b7285; }
-#aiText { background:#eef6f7; padding:15px; border-left:5px solid #0b7285; }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+h2 {
+  text-align: center;
+  margin-top: 20px;
+}
+#map {
+  height: 400px;
+  margin: 20px;
+}
+.chart-container {
+  width: 90%;
+  margin: auto;
+}
+.analysis {
+  width: 90%;
+  margin: 20px auto;
+  padding: 15px;
+  background: #f2f7f5;
+  border-left: 5px solid #2c7;
+}
 </style>
 </head>
 
 <body>
 
-<header>
-<h1>Ողջի գետի ջրի որակի դասային վերլուծություն</h1>
-<p>Համեմատություն ՀՀ գետերի էկոլոգիական դասակարգման հետ</p>
-</header>
+<h2>Ողջի գետի նմուշառման քարտեզ</h2>
+<div id="map"></div>
 
-<section>
-<h2>📊 Դասային գրաֆիկ (խնդրահարույց տարրեր)</h2>
-<canvas id="chart" width="900" height="450"></canvas>
-</section>
+<h2>Fe-ի որակի դասերի գրաֆիկ</h2>
+<div class="chart-container">
+  <canvas id="feChart"></canvas>
+</div>
 
-<section>
-<h2>🤖 Արհեստական բանականության վերլուծություն</h2>
-<div id="aiText"></div>
-</section>
+<h2>Շաբաթական վերլուծություն</h2>
+<div class="analysis" id="weeklyAnalysis"></div>
 
 <script>
-// ===== Ամսաթվեր =====
-const labels = ['05.01','07.01','08.01','09.01','12.01','13.01'];
+/* ======================
+   1. ՏՎՅԱԼՆԵՐ
+====================== */
+const samples = [
+  { date: "2025-01-01", Fe: 2.1, lat: 39.205, lng: 46.405 },
+  { date: "2025-01-05", Fe: 9.053, lat: 39.210, lng: 46.410 },
+  { date: "2025-01-08", Fe: 4.3, lat: 39.215, lng: 46.415 },
+  { date: "2025-01-12", Fe: 1.8, lat: 39.220, lng: 46.420 }
+];
 
-// ===== Իրական տվյալներ =====
-const data = {
-  Fe: [9.053,0,0.181,0,0.146,0],
-  Al: [2.740,0.009,0.131,0.236,0.244,0.046],
-  Mn: [0.234,0.041,0.054,0.134,0.040,0.035],
-  Mo: [0.342,0.218,0.222,1.315,0.264,0.114],
-  Li: [0.096,0.073,0.074,0.413,0.055,0.019]
-};
-
-// ===== Դասային շեմեր (ՀՀ գետեր) =====
-const limits = {
-  Fe: [0.031,0.062,0.5,1],
-  Al: [0.03,0.06,0.12,5],
-  Mn: [0.004,0.008,0.016,0.032],
-  Mo: [0.015,0.03,0.06,0.12],
-  Li: [0.005,0.01,0.02,0.04]
-};
-
-// ===== Դասի հաշվարկ =====
-function getClass(value, lim) {
-  if (value <= lim[0]) return 1;
-  if (value <= lim[1]) return 2;
-  if (value <= lim[2]) return 3;
-  if (value <= lim[3]) return 4;
+/* ======================
+   2. ՈՐԱԿԻ ԴԱՍԵՐ (Ողջի գետ)
+====================== */
+function feClass(value) {
+  if (value <= 0.3) return 1;
+  if (value <= 1.0) return 2;
+  if (value <= 2.0) return 3;
+  if (value <= 5.0) return 4;
   return 5;
 }
 
-// ===== Դասային տվյալներ =====
-const classData = {};
-for (let el in data) {
-  classData[el] = data[el].map(v => getClass(v, limits[el]));
-}
+/* ======================
+   3. ՔԱՐՏԵԶ
+====================== */
+const map = L.map('map').setView([39.21, 46.41], 12);
 
-// ===== Գրաֆիկ =====
-new Chart(document.getElementById('chart'), {
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+samples.forEach(s => {
+  const qClass = feClass(s.Fe);
+  L.circleMarker([s.lat, s.lng], {
+    radius: 8,
+    color: qClass === 5 ? "red" : qClass === 4 ? "orange" : "green",
+    fillOpacity: 0.8
+  })
+  .addTo(map)
+  .bindPopup(
+    `<b Ամսաթիվ:</b> ${s.date}<br>
+     <b>Fe:</b> ${s.Fe}<br>
+     <b>Որակի դաս:</b> ${qClass}`
+  );
+});
+
+/* ======================
+   4. ԳՐԱՖԻԿ
+====================== */
+const labels = samples.map(s => s.date);
+const feClasses = samples.map(s => feClass(s.Fe));
+
+new Chart(document.getElementById('feChart'), {
   type: 'line',
   data: {
-    labels,
-    datasets: [
-      { label:'Fe', data:classData.Fe, borderColor:'red', borderWidth:2 },
-      { label:'Al', data:classData.Al, borderColor:'blue', borderWidth:2 },
-      { label:'Mn', data:classData.Mn, borderColor:'green', borderWidth:2 },
-      { label:'Mo', data:classData.Mo, borderColor:'purple', borderWidth:2 },
-      { label:'Li', data:classData.Li, borderColor:'orange', borderWidth:2 }
-    ]
+    labels: labels,
+    datasets: [{
+      label: 'Fe – ջրի որակի դաս',
+      data: feClasses,
+      borderColor: 'blue',
+      backgroundColor: 'rgba(0, 123, 255, 0.2)',
+      tension: 0.3,
+      pointRadius: 6
+    }]
   },
   options: {
-    plugins: {
-      tooltip: {
-        callbacks: {
-          label: ctx => {
-            const el = ctx.dataset.label;
-            const i = ctx.dataIndex;
-            return `${el}: ${data[el][i]} մգ/լ → Դաս ${ctx.raw}`;
-          }
-        }
-      }
-    },
     scales: {
       y: {
-        min:1, max:5,
-        ticks:{
-          stepSize:1,
-          callback:v=>['','I շատ լավ','II լավ','III բավարար','IV վատ','V շատ վատ'][v]
+        min: 1,
+        max: 5,
+        ticks: {
+          stepSize: 1
         },
-        title:{display:true,text:'Ջրի որակի դաս'}
+        title: {
+          display: true,
+          text: 'Ջրի որակի դաս'
+        }
       }
     }
   }
 });
 
-// ===== ԱԲ ՏԵՔՍՏԱՅԻՆ ՎԵՐԼՈՒԾՈՒԹՅՈՒՆ =====
-let text = `<strong>Ընդհանուր գնահատում.</strong><br>`;
-let problems = [];
+/* ======================
+   5. ՇԱԲԱԹԱԿԱՆ ՎԵՐԼՈՒԾՈՒԹՅՈՒՆ
+====================== */
+const avgClass =
+  feClasses.reduce((a, b) => a + b, 0) / feClasses.length;
 
-for (let el in classData) {
-  const maxClass = Math.max(...classData[el]);
-  if (maxClass >= 4) {
-    problems.push(`${el} (առավելագույնը՝ ${maxClass} դաս)`);
-  }
-}
+document.getElementById("weeklyAnalysis").innerHTML =
+  `Շաբաթվա ընթացքում Fe-ի միջին որակի դասը կազմում է
+   <b>${avgClass.toFixed(1)}</b>,
+   ինչը վկայում է ջրի որակի
+   <b>${Math.round(avgClass)}-րդ դասի</b>
+   գերակշռության մասին։`;
 
-text += problems.length
-  ? `Հետազոտված ժամանակահատվածում առավել խնդրահարույց տարրերն են՝ <strong>${problems.join(', ')}</strong>։`
-  : `Վտանգավոր գերազանցումներ չեն արձանագրվել։`;
-
-text += `<br><br><strong>Եզրակացություն.</strong> Տվյալ ժամանակահատվածում Ողջի գետի ջրի որակը մի շարք օրերին դասվում է <strong>IV–V (վատ–շատ վատ)</strong> դասերի, ինչը վկայում է մարդածին և երկրաբանական ազդեցությունների համակցված ազդեցության մասին։`;
-
-document.getElementById('aiText').innerHTML = text;
 </script>
 
 </body>
 </html>
+
 

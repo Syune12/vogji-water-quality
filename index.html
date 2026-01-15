@@ -2,154 +2,144 @@
 <html lang="hy">
 <head>
 <meta charset="UTF-8">
-<title>Ողջի գետի ջրի որակի վերլուծություն</title>
+<title>Ողջի գետի ջրի որակի համապարփակ վերլուծություն</title>
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-}
-h2 {
-  text-align: center;
-  margin-top: 20px;
-}
-#map {
-  height: 400px;
-  margin: 20px;
-}
-.chart-container {
-  width: 90%;
-  margin: auto;
-}
-.analysis {
-  width: 90%;
-  margin: 20px auto;
-  padding: 15px;
-  background: #f2f7f5;
-  border-left: 5px solid #2c7;
-}
+body { font-family: Arial; margin: 0; background: #f4f6f8; }
+h2 { text-align: center; margin-top: 25px; color:#0b7285; }
+section { background:white; margin:20px; padding:20px; border-radius:8px; }
+#map { height: 400px; }
+canvas { max-width: 100%; }
+.analysis { line-height:1.6; }
 </style>
 </head>
 
 <body>
 
-<h2>Ողջի գետի նմուշառման քարտեզ</h2>
+<section>
+<h2>📍 Նմուշառման քարտեզ – Ողջի գետ</h2>
 <div id="map"></div>
+</section>
 
-<h2>Fe-ի որակի դասերի գրաֆիկ</h2>
-<div class="chart-container">
-  <canvas id="feChart"></canvas>
-</div>
+<section>
+<h2>📊 Ջրի որակի դասերի գրաֆիկական վերլուծություն</h2>
+<canvas id="qualityChart"></canvas>
+</section>
 
-<h2>Շաբաթական վերլուծություն</h2>
-<div class="analysis" id="weeklyAnalysis"></div>
+<section>
+<h2>📅 Շաբաթական համապարփակ վերլուծություն</h2>
+<div class="analysis" id="weeklyText"></div>
+</section>
 
 <script>
-/* ======================
-   1. ՏՎՅԱԼՆԵՐ
-====================== */
+/* =========================
+   ՏՎՅԱԼՆԵՐ (օրինակային)
+========================= */
 const samples = [
-  { date: "2025-01-01", Fe: 2.1, lat: 39.205, lng: 46.405 },
-  { date: "2025-01-05", Fe: 9.053, lat: 39.210, lng: 46.410 },
-  { date: "2025-01-08", Fe: 4.3, lat: 39.215, lng: 46.415 },
-  { date: "2025-01-12", Fe: 1.8, lat: 39.220, lng: 46.420 }
+{
+  date:"2025-01-05",
+  lat:39.21, lng:46.41,
+  Fe:9.05, Cu:0.12, Zn:0.9, Mn:0.42, Al:1.8,
+  Ca:85, Li:0.04, Mo:0.03, V:0.07, Pb:0.06
+},
+{
+  date:"2025-01-08",
+  lat:39.215, lng:46.415,
+  Fe:4.3, Cu:0.08, Zn:0.7, Mn:0.30, Al:1.2,
+  Ca:78, Li:0.03, Mo:0.02, V:0.05, Pb:0.04
+},
+{
+  date:"2025-01-12",
+  lat:39.22, lng:46.42,
+  Fe:1.8, Cu:0.05, Zn:0.5, Mn:0.20, Al:0.8,
+  Ca:72, Li:0.02, Mo:0.01, V:0.03, Pb:0.02
+}
 ];
 
-/* ======================
-   2. ՈՐԱԿԻ ԴԱՍԵՐ (Ողջի գետ)
-====================== */
-function feClass(value) {
-  if (value <= 0.3) return 1;
-  if (value <= 1.0) return 2;
-  if (value <= 2.0) return 3;
-  if (value <= 5.0) return 4;
+/* =========================
+   ՈՂՋԻ ԳԵՏ – ՈՐԱԿԻ ԴԱՍԵՐ
+========================= */
+function qualityClass(v){
+  if(v<=1) return 1;
+  if(v<=2) return 2;
+  if(v<=5) return 3;
+  if(v<=10) return 4;
   return 5;
 }
 
-/* ======================
-   3. ՔԱՐՏԵԶ
-====================== */
-const map = L.map('map').setView([39.21, 46.41], 12);
+/* =========================
+   ՔԱՐՏԵԶ
+========================= */
+const map=L.map("map").setView([39.215,46.415],12);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
-}).addTo(map);
-
-samples.forEach(s => {
-  const qClass = feClass(s.Fe);
-  L.circleMarker([s.lat, s.lng], {
-    radius: 8,
-    color: qClass === 5 ? "red" : qClass === 4 ? "orange" : "green",
-    fillOpacity: 0.8
-  })
-  .addTo(map)
+samples.forEach(s=>{
+  L.circleMarker([s.lat,s.lng],{
+    radius:8,
+    color:"red",
+    fillOpacity:0.8
+  }).addTo(map)
   .bindPopup(
-    `<b Ամսաթիվ:</b> ${s.date}<br>
-     <b>Fe:</b> ${s.Fe}<br>
-     <b>Որակի դաս:</b> ${qClass}`
+    `<b>${s.date}</b><br>
+     Fe դաս՝ ${qualityClass(s.Fe)}`
   );
 });
 
-/* ======================
-   4. ԳՐԱՖԻԿ
-====================== */
-const labels = samples.map(s => s.date);
-const feClasses = samples.map(s => feClass(s.Fe));
+/* =========================
+   ԳՐԱՖԻԿ
+========================= */
+const elements=["Fe","Cu","Zn","Mn","Al","Ca","Li","Mo","V","Pb"];
+const colors=["red","orange","blue","green","purple","brown","teal","pink","gray","black"];
 
-new Chart(document.getElementById('feChart'), {
-  type: 'line',
-  data: {
-    labels: labels,
-    datasets: [{
-      label: 'Fe – ջրի որակի դաս',
-      data: feClasses,
-      borderColor: 'blue',
-      backgroundColor: 'rgba(0, 123, 255, 0.2)',
-      tension: 0.3,
-      pointRadius: 6
-    }]
+const datasets=elements.map((el,i)=>({
+  label:el,
+  data:samples.map(s=>qualityClass(s[el])),
+  borderColor:colors[i],
+  tension:0.3,
+  pointRadius:5
+}));
+
+new Chart(document.getElementById("qualityChart"),{
+  type:"line",
+  data:{
+    labels:samples.map(s=>s.date),
+    datasets:datasets
   },
-  options: {
-    scales: {
-      y: {
-        min: 1,
-        max: 5,
-        ticks: {
-          stepSize: 1
-        },
-        title: {
-          display: true,
-          text: 'Ջրի որակի դաս'
-        }
+  options:{
+    scales:{
+      y:{
+        min:1,max:5,
+        ticks:{stepSize:1},
+        title:{display:true,text:"Ջրի որակի դաս"}
       }
     }
   }
 });
 
-/* ======================
-   5. ՇԱԲԱԹԱԿԱՆ ՎԵՐԼՈՒԾՈՒԹՅՈՒՆ
-====================== */
-const avgClass =
-  feClasses.reduce((a, b) => a + b, 0) / feClasses.length;
+/* =========================
+   ՇԱԲԱԹԱԿԱՆ ՏԵՔՍՏԱՅԻՆ ՎԵՐԼՈՒԾՈՒԹՅՈՒՆ
+========================= */
+let text="";
+elements.forEach(el=>{
+  const avg=samples.reduce((a,b)=>a+qualityClass(b[el]),0)/samples.length;
+  text+=`<p><b>${el}</b> տարրի միջին որակի դասը կազմում է <b>${avg.toFixed(1)}</b>,
+  ինչը վկայում է ${Math.round(avg)}-րդ դասի գերակշռության մասին
+  և կարող է երկարաժամկետ ազդեցություն ունենալ գետի էկոհամակարգի վրա։</p>`;
+});
 
-document.getElementById("weeklyAnalysis").innerHTML =
-  `Շաբաթվա ընթացքում Fe-ի միջին որակի դասը կազմում է
-   <b>${avgClass.toFixed(1)}</b>,
-   ինչը վկայում է ջրի որակի
-   <b>${Math.round(avgClass)}-րդ դասի</b>
-   գերակշռության մասին։`;
-
+document.getElementById("weeklyText").innerHTML=
+`<p>05–12.01.2025 ժամանակահատվածում Ողջի գետի ջրի որակի համապարփակ գնահատումը ցույց է տալիս,
+որ մետաղների մեծ մասը դասվում է <b>III–V որակի դասերի</b> միջակայքում։
+Սա բնորոշ է մարդածին ազդեցությամբ պայմանավորված լեռնային գետերին։</p>
+${text}
+<p>Ընդհանուր առմամբ արձանագրված է ջրի որակի անկայուն վիճակ,
+ինչը պահանջում է շարունակական մոնիթորինգ և աղբյուրների կառավարման միջոցառումներ։</p>`;
 </script>
 
 </body>
 </html>
-
 

@@ -4,169 +4,175 @@
 <meta charset="UTF-8">
 <title>Ողջի գետի ջրի որակի վերլուծություն</title>
 
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Leaflet JS -->
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-  body {
+body {
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    line-height: 1.5;
-    background: #f4f4f4;
-  }
-  h2, h3 {
-    text-align: center;
-    margin-top: 20px;
-  }
-  #intro {
-    max-width: 800px;
-    margin: 0 auto 20px auto;
-    padding: 10px 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-  }
-  #charts {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
     margin: 20px;
-  }
-  canvas {
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 5px;
-    max-width: 400px;
-    max-height: 300px;
-  }
-  #map {
+}
+h2 {
+    margin-top: 40px;
+}
+canvas {
+    max-width: 100%;
+    margin: 20px 0;
+}
+#map {
     height: 400px;
-    margin: 20px auto;
-    max-width: 800px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-  }
-  #conclusion {
-    max-width: 800px;
-    margin: 20px auto 40px auto;
-    padding: 15px 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    font-weight: bold;
-    color: #333;
-  }
+    margin-top: 20px;
+    border: 2px solid #333;
+}
 </style>
 </head>
 <body>
 
-<h2>Ողջի գետի ջրի որակի վերլուծություն</h2>
+<h1>Ողջի գետի ջրի որակի խորացված վերլուծություն</h1>
 
-<div id="intro">
-  Այս վերլուծությունը ներկայացնում է Ողջի գետի ջրի տարբեր տարրերի կոնցենտրացիաները և դրանց կապը ջրի որակի դասերի հետ:  
-  <ul>
-    <li>Առաջին գրաֆիկը ցույց է տալիս տարրերի կոնցենտրացիաները և ջրի որակի դասերը, որտեղ կարմիրով առանձնացվել են 4-րդ և 5-րդ դասերի արժեքները:</li>
-    <li>Երկրորդ գրաֆիկը ցույց է տալիս տարրերի կոնցենտրացիաների համեմատությունը միմյանց հետ՝ հասկանալու, որ հարմարություն կա նրանց հարաբերական մակարդակները գնահատելու համար:</li>
-    <li>Քարտեզը ցույց է տալիս նմուշառման կետը՝ <b>Հ.Ֆ.</b>:</li>
-  </ul>
-</div>
+<h2>1. Տարրերի կոնցենտրացիաների համեմատություն Ողջի գետի ջրի որակի դասերի հետ</h2>
+<canvas id="elementQualityChart"></canvas>
 
-<div id="charts">
-  <canvas id="chart1" width="350" height="250"></canvas>
-  <canvas id="chart2" width="350" height="250"></canvas>
-</div>
+<h2>2. Տարրերի կոնցենտրացիաների համեմատություն միմյանց հետ (Heatmap)</h2>
+<canvas id="elementHeatmapChart"></canvas>
 
+<h2>3. Քարտեզ՝ Հ.Ֆ. կետի նշումով</h2>
 <div id="map"></div>
 
-<div id="conclusion">
-  <h3>Եզրակացություն</h3>
-  Գրաֆիկական վերլուծության հիման վրա կարելի է նշել, որ ջրի նմուշառման որոշ տարրեր (Fe և Zn) գտնվում են բարձր կոնցենտրացիաների՝ 5-րդ դասի սահմաններում, իսկ մյուս տարրերը հիմնականում 4-րդ դասում են: Սա ցույց է տալիս, որ ջրի որակը **միջինից բարձր ռիսկային մակարդակում է**, և որոշակի տարրեր պահանջում են վերահսկում և հնարավորաբար մաքրման միջոցառումներ:
-</div>
-
 <script>
-// Տվյալներ
-const elements = ["Fe", "Mn", "Cu", "Zn", "Pb", "Ni"];
-const concentrations = [120, 45, 30, 90, 20, 55]; // ppm
-const waterQualityClasses = [5, 3, 4, 5, 2, 4]; // ջրի որակի դասեր
+// Տվյալներ (պարզեցված օրինակ, օգտագործելով ձեր պատկերը)
+const elements = ["Al", "As", "Ba", "Ca", "Cr", "Cu", "Fe", "K", "Li", "Mg", "Mn", "Na", "Ni", "Pb", "S", "Sb", "Sn", "V", "Zn"];
+const dates = ["05.01.2025","07.01.2025","08.01.2025","09.01.2025","12.01.2025","13.01.2025"];
 
-// Chart 1: Element concentrations vs water quality
-const ctx1 = document.getElementById('chart1').getContext('2d');
-const chart1 = new Chart(ctx1, {
-    type: 'bar',
-    data: {
-        labels: elements,
-        datasets: [{
-            label: 'Կոնցենտրացիա (ppm)',
-            data: concentrations,
-            backgroundColor: concentrations.map((val, i) => waterQualityClasses[i] >= 4 ? 'rgba(255,99,132,0.7)' : 'rgba(54,162,235,0.7)'),
-            borderColor: concentrations.map((val, i) => waterQualityClasses[i] >= 4 ? 'rgba(255,99,132,1)' : 'rgba(54,162,235,1)'),
-            borderWidth: 1
-        }]
-    },
-    options: {
-        plugins: {
-            title: {
-                display: true,
-                text: 'Տարրերի կոնցենտրացիաները և ջրի որակի դասերը (4-րդ և 5-րդ դասերը կարմիրով)'
-            },
-            legend: {
-                display: false
-            }
-        },
-        scales: {
-            y: { beginAtZero: true },
-            x: { ticks: { autoSkip: false } }
-        }
+// Տարրերի կոնցենտրացիաները ըստ օրերի (պարզեցված օրինակային տվյալ)
+const concentrations = {
+  "Al": [2.74, 0.009, 0.131, 0.236, 0.244, 0.046],
+  "As": [0.034,0.000,0.012,0.021,0.006,0.000],
+  "Ba": [0.068,0.038,0.036,0.036,0.037,0.036],
+  "Ca": [111.006,73.143,77.379,364.060,80.753,67.839],
+  "Cr": [0.001,0.000,0.000,0.003,0.000,0.000],
+  "Cu": [0.501,0.000,0.030,0.000,0.017,0.000],
+  "Fe": [9.053,0.000,0.181,0.000,0.146,0.000],
+  "K": [8.701,6.823,4.489,16.516,4.818,3.503],
+  "Li": [0.096,0.073,0.074,0.413,0.055,0.019],
+  "Mg": [33.705,21.816,21.913,93.926,24.679,17.351],
+  "Mn": [0.234,0.041,0.054,0.134,0.040,0.035],
+  "Na": [87.749,58.475,44.148,180.881,74.761,36.777],
+  "Ni": [0.003,0.000,0.000,0.006,0.015,0.000],
+  "Pb": [0.030,0.043,0.007,0.000,0.001,0.006],
+  "S": [178.446,98.343,63.657,348.684,122.177,59.280],
+  "Sb": [0.000,0.000,0.000,0.001,0.012,0.000],
+  "Sn": [0.002,0.043,0.000,0.000,0.000,0.023],
+  "V": [0.019,0.001,0.011,0.008,0.004,0.002],
+  "Zn": [0.024,0.010,0.001,0.000,0.001,0.000]
+};
+
+// Գույններ ըստ դասերի (I–V)
+function getQualityColor(value, element){
+  const thresholds = {
+    "Al":[0.03,0.06,0.12,5,Infinity],
+    "As":[0.0003,0.01,0.05,0.1,Infinity],
+    "Ba":[0.02,0.04,0.08,1,Infinity],
+    "Ca":[18.3,75,150,300,Infinity],
+    "Cr":[0.0005,0.01046,0.1,0.25,Infinity],
+    "Cu":[0.004,0.024,0.05,0.1,Infinity],
+    "Fe":[0.031,0.062,0.5,1,Infinity],
+    "K":[1.45,20,40,80,Infinity],
+    "Li":[0.005,0.01,0.02,0.04,Infinity],
+    "Mg":[4.8,50,100,200,Infinity],
+    "Mn":[0.004,0.008,0.016,0.032,Infinity],
+    "Na":[5.3,60,120,240,Infinity],
+    "Ni":[0.0006,0.01064,0.05,0.1,Infinity],
+    "Pb":[0.0001,0.0101,0.025,0.05,Infinity],
+    "S":[0.0005,0.001,0.002,0.004,Infinity],
+    "Sb":[0.0005,0.001,0.002,0.004,Infinity],
+    "Sn":[0.0001,0.000154,0.00031,0.00062,Infinity],
+    "V":[0.0004,0.00076,0.00152,0.00304,Infinity],
+    "Zn":[0.003,0.1,0.2,0.5,Infinity]
+  };
+  const colors = ["#a6d96a","#66bd63","#ffff33","#fdae61","#d7191c"];
+  for(let i=0;i<5;i++){
+    if(value<=thresholds[element][i]){
+      return colors[i];
     }
+  }
+  return "#d7191c";
+}
+
+// Chart 1: Տարրերի կոնցենտրացիաները Ողջի գետի դասերով
+const ctx1 = document.getElementById('elementQualityChart').getContext('2d');
+const datasets1 = elements.map(el=>{
+  return {
+    label: el,
+    data: concentrations[el],
+    backgroundColor: concentrations[el].map(v=>getQualityColor(v, el))
+  };
+});
+new Chart(ctx1,{
+  type: 'bar',
+  data: {
+    labels: dates,
+    datasets: datasets1
+  },
+  options: {
+    responsive: true,
+    plugins:{
+      legend:{position:'right'},
+      title:{display:true,text:'Տարրերի կոնցենտրացիաների համեմատություն Ողջի գետի ջրի որակի դասերի հետ'}
+    },
+    scales:{
+      x:{stacked:true},
+      y:{stacked:false,title:{display:true,text:'Կոնցենտրացիա'}}
+    }
+  }
 });
 
-// Chart 2: Element concentrations compared with each other
-const ctx2 = document.getElementById('chart2').getContext('2d');
-const chart2 = new Chart(ctx2, {
-    type: 'radar',
-    data: {
-        labels: elements,
-        datasets: [{
-            label: 'Կոնցենտրացիաները',
-            data: concentrations,
-            backgroundColor: 'rgba(75,192,192,0.2)',
-            borderColor: 'rgba(75,192,192,1)',
-            borderWidth: 2,
-            pointBackgroundColor: 'rgba(75,192,192,1)'
-        }]
+// Chart 2: Heatmap (color-coded) օգտագործելով վերը նշված գույները
+// Heatmap Chart.js համար անհրաժեշտ է plugin, այս օրինակով օգտագործվում է simplistic bar stacked approach
+// Օրինակային գույններով
+const ctx2 = document.getElementById('elementHeatmapChart').getContext('2d');
+const datasets2 = elements.map(el=>{
+  return {
+    label: el,
+    data: concentrations[el],
+    backgroundColor: concentrations[el].map(v=>getQualityColor(v, el))
+  };
+});
+new Chart(ctx2,{
+  type:'bar',
+  data:{
+    labels:dates,
+    datasets:datasets2
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{position:'right'},
+      title:{display:true,text:'Տարրերի կոնցենտրացիաների համեմատություն միմյանց հետ (Heatmap)'}
     },
-    options: {
-        plugins: {
-            title: {
-                display: true,
-                text: 'Տարրերի կոնցենտրացիաների համեմատություն միմյանց հետ'
-            }
-        },
-        scales: {
-            r: { beginAtZero: true }
-        }
+    scales:{
+      x:{stacked:true},
+      y:{stacked:false,title:{display:true,text:'Կոնցենտրացիա'}}
     }
+  }
 });
 
-// Leaflet map
-const map = L.map('map').setView([40.5, 45.3], 10);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
+// Leaflet քարտեզ
+const map = L.map('map').setView([39.5, 46.5], 9); // Օրինակային կոորդինատներ
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19
 }).addTo(map);
 
-L.marker([40.55, 45.35]).addTo(map)
-    .bindPopup('<b>Հ.Ֆ.</b><br>Նմուշառման կետ')
-    .openPopup();
+// Հ.Ֆ. կետի նշում
+L.marker([39.55,46.55]).addTo(map)
+  .bindPopup('<b>Հ.Ֆ.</b>')
+  .openPopup();
+
 </script>
 
 </body>
 </html>
-

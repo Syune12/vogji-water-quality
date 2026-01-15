@@ -2,208 +2,131 @@
 <html lang="hy">
 <head>
 <meta charset="UTF-8">
-<title>Ողջի գետի ջրի որակի խորացված վերլուծություն</title>
+<title>Ողջի գետի ջրի որակի դասային վերլուծություն</title>
 
-<!-- Leaflet քարտեզի գրադարան -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<!-- Chart.js գրադարան գրաֆիկի համար -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { font-family: Arial; background: #f4f6f8; margin: 0; }
-header { background: #0b7285; color: white; padding: 20px; text-align: center; }
-section { background: white; margin: 15px; padding: 20px; border-radius: 8px; }
-#map { height: 350px; }
-footer { text-align: center; background: #dee2e6; padding: 10px; }
-h2 { color: #0b7285; }
+body { font-family: Arial; background:#f4f6f8; margin:0; }
+header { background:#0b7285; color:white; padding:20px; text-align:center; }
+section { background:white; margin:15px; padding:20px; border-radius:8px; }
+h2 { color:#0b7285; }
+#aiText { background:#eef6f7; padding:15px; border-left:5px solid #0b7285; }
 </style>
 </head>
 
 <body>
 
 <header>
-<h1>Ողջի գետի ջրի որակի խորացված վերլուծություն</h1>
-<p>Կետ՝ Հ.Ֆ | 39°9'10.77"N, 46°8'55.86"E</p>
+<h1>Ողջի գետի ջրի որակի դասային վերլուծություն</h1>
+<p>Համեմատություն ՀՀ գետերի էկոլոգիական դասակարգման հետ</p>
 </header>
 
 <section>
-<h2>📍 Նմուշառման քարտեզ</h2>
-<div id="map"></div>
-<script>
-// Leaflet քարտեզի ստեղծում
-var map = L.map('map').setView([39.1529917, 46.14885], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-}).addTo(map);
-
-// Նմուշառման կետ
-L.marker([39.1529917, 46.14885]).addTo(map)
-    .bindPopup('Ողջի գետի նմուշառման կետ')
-    .openPopup();
-</script>
+<h2>📊 Դասային գրաֆիկ (խնդրահարույց տարրեր)</h2>
+<canvas id="chart" width="900" height="450"></canvas>
 </section>
 
-<canvas id="chart" width="700" height="450"></canvas>
+<section>
+<h2>🤖 Արհեստական բանականության վերլուծություն</h2>
+<div id="aiText"></div>
+</section>
 
 <script>
-// ===== 1. Ամսաթվեր =====
-const labels = [
-  '05.01.2025','06.01.2025','07.01.2025','08.01.2025',
-  '09.01.2025','10.01.2025','11.01.2025','12.01.2025','13.01.2025'
-];
+// ===== Ամսաթվեր =====
+const labels = ['05.01','07.01','08.01','09.01','12.01','13.01'];
 
-// ===== 2. Իրական չափված արժեքներ (մգ/լ) =====
-const feValues = [9.053, 3.2, 2.1, 1.8, 2.5, 1.9, 2.0, 2.2, 1.7];
-const alValues = [1.2, 0.9, 0.7, 0.6, 0.8, 0.7, 0.75, 0.8, 0.65];
-const mnValues = [0.45, 0.38, 0.35, 0.32, 0.36, 0.34, 0.33, 0.35, 0.31];
+// ===== Իրական տվյալներ =====
+const data = {
+  Fe: [9.053,0,0.181,0,0.146,0],
+  Al: [2.740,0.009,0.131,0.236,0.244,0.046],
+  Mn: [0.234,0.041,0.054,0.134,0.040,0.035],
+  Mo: [0.342,0.218,0.222,1.315,0.264,0.114],
+  Li: [0.096,0.073,0.074,0.413,0.055,0.019]
+};
 
-// ===== 3. Դասավորման ֆունկցիաներ (Ողջի գետ) =====
+// ===== Դասային շեմեր (ՀՀ գետեր) =====
+const limits = {
+  Fe: [0.031,0.062,0.5,1],
+  Al: [0.03,0.06,0.12,5],
+  Mn: [0.004,0.008,0.016,0.032],
+  Mo: [0.015,0.03,0.06,0.12],
+  Li: [0.005,0.01,0.02,0.04]
+};
 
-// Երկաթ (Fe)
-function feClass(v) {
-  if (v <= 0.3) return 1;
-  if (v <= 1.0) return 2;
-  if (v <= 2.0) return 3;
-  if (v <= 5.0) return 4;
+// ===== Դասի հաշվարկ =====
+function getClass(value, lim) {
+  if (value <= lim[0]) return 1;
+  if (value <= lim[1]) return 2;
+  if (value <= lim[2]) return 3;
+  if (value <= lim[3]) return 4;
   return 5;
 }
 
-// Ալյումին (Al)
-function alClass(v) {
-  if (v <= 0.2) return 1;
-  if (v <= 0.5) return 2;
-  if (v <= 1.0) return 3;
-  if (v <= 2.0) return 4;
-  return 5;
+// ===== Դասային տվյալներ =====
+const classData = {};
+for (let el in data) {
+  classData[el] = data[el].map(v => getClass(v, limits[el]));
 }
 
-// Մանգան (Mn)
-function mnClass(v) {
-  if (v <= 0.05) return 1;
-  if (v <= 0.1) return 2;
-  if (v <= 0.3) return 3;
-  if (v <= 0.5) return 4;
-  return 5;
-}
-
-// ===== 4. Դասերի հաշվարկ =====
-const feClasses = feValues.map(feClass);
-const alClasses = alValues.map(alClass);
-const mnClasses = mnValues.map(mnClass);
-
-// ===== 5. Գրաֆիկ =====
-const ctx = document.getElementById('chart').getContext('2d');
-
-new Chart(ctx, {
+// ===== Գրաֆիկ =====
+new Chart(document.getElementById('chart'), {
   type: 'line',
   data: {
-    labels: labels,
+    labels,
     datasets: [
-      {
-        label: 'Երկաթ (Fe)',
-        data: feClasses,
-        borderColor: 'red',
-        borderWidth: 2,
-        tension: 0.2
-      },
-      {
-        label: 'Ալյումին (Al)',
-        data: alClasses,
-        borderColor: 'blue',
-        borderWidth: 2,
-        tension: 0.2
-      },
-      {
-        label: 'Մանգան (Mn)',
-        data: mnClasses,
-        borderColor: 'green',
-        borderWidth: 2,
-        tension: 0.2
-      }
+      { label:'Fe', data:classData.Fe, borderColor:'red', borderWidth:2 },
+      { label:'Al', data:classData.Al, borderColor:'blue', borderWidth:2 },
+      { label:'Mn', data:classData.Mn, borderColor:'green', borderWidth:2 },
+      { label:'Mo', data:classData.Mo, borderColor:'purple', borderWidth:2 },
+      { label:'Li', data:classData.Li, borderColor:'orange', borderWidth:2 }
     ]
   },
   options: {
-    responsive: false,
     plugins: {
-      title: {
-        display: true,
-        text: 'Ողջի գետի ջրի որակի դասային վերլուծություն'
-      },
       tooltip: {
         callbacks: {
-          label: function(ctx) {
+          label: ctx => {
+            const el = ctx.dataset.label;
             const i = ctx.dataIndex;
-            const mapClass = {
-              1:'I – շատ լավ',
-              2:'II – լավ',
-              3:'III – բավարար',
-              4:'IV – վատ',
-              5:'V – շատ վատ'
-            };
-            let real;
-            if (ctx.dataset.label.includes('Fe')) real = feValues[i];
-            if (ctx.dataset.label.includes('Al')) real = alValues[i];
-            if (ctx.dataset.label.includes('Mn')) real = mnValues[i];
-            return `${ctx.dataset.label}: ${real} մգ/լ → ${mapClass[ctx.raw]}`;
+            return `${el}: ${data[el][i]} մգ/լ → Դաս ${ctx.raw}`;
           }
         }
       }
     },
     scales: {
       y: {
-        min: 1,
-        max: 5,
-        ticks: {
-          stepSize: 1,
-          callback: v => ({
-            1:'I – շատ լավ',
-            2:'II – լավ',
-            3:'III – բավարար',
-            4:'IV – վատ',
-            5:'V – շատ վատ'
-          })[v]
+        min:1, max:5,
+        ticks:{
+          stepSize:1,
+          callback:v=>['','I շատ լավ','II լավ','III բավարար','IV վատ','V շատ վատ'][v]
         },
-        title: {
-          display: true,
-          text: 'Ջրի որակի դաս (Ողջի գետ)'
-        }
+        title:{display:true,text:'Ջրի որակի դաս'}
       }
     }
   }
 });
+
+// ===== ԱԲ ՏԵՔՍՏԱՅԻՆ ՎԵՐԼՈՒԾՈՒԹՅՈՒՆ =====
+let text = `<strong>Ընդհանուր գնահատում.</strong><br>`;
+let problems = [];
+
+for (let el in classData) {
+  const maxClass = Math.max(...classData[el]);
+  if (maxClass >= 4) {
+    problems.push(`${el} (առավելագույնը՝ ${maxClass} դաս)`);
+  }
+}
+
+text += problems.length
+  ? `Հետազոտված ժամանակահատվածում առավել խնդրահարույց տարրերն են՝ <strong>${problems.join(', ')}</strong>։`
+  : `Վտանգավոր գերազանցումներ չեն արձանագրվել։`;
+
+text += `<br><br><strong>Եզրակացություն.</strong> Տվյալ ժամանակահատվածում Ողջի գետի ջրի որակը մի շարք օրերին դասվում է <strong>IV–V (վատ–շատ վատ)</strong> դասերի, ինչը վկայում է մարդածին և երկրաբանական ազդեցությունների համակցված ազդեցության մասին։`;
+
+document.getElementById('aiText').innerHTML = text;
 </script>
-
-<section>
-<h2>🤖 Արհեստական բանականության խորացված վերլուծություն</h2>
-<p>
-Վերլուծված ժամանակահատվածում (05.01.2025–13.01.2025) արձանագրվել են մի շարք տարրերի կոնցենտրացիաների զգալի տատանումներ։
-</p>
-
-<p>
-<strong>Երկաթ (Fe)</strong> – 05.01.2025-ին դիտվել է խիստ բարձր կոնցենտրացիա, որը գերազանցում է II և III դասերի շեմերը։ Սա կարող է պայմանավորված լինել երկրաբանական ֆոնի ակտիվացմամբ կամ վերին հոսանքներում մետաղական հանքավայրերի ազդեցությամբ։ Հաջորդ օրերին Fe-ի նվազումը վկայում է ինքնամաքրման գործընթացի մասնակի ակտիվացման մասին։
-</p>
-
-<p>
-<strong>Ալյումին (Al)</strong> – 05.01-ին արձանագրված բարձր արժեքը բնորոշ է թթվային–ալկալային միջավայրի փոփոխություններին և կարող է կապված լինել նստվածքային նյութերի ակտիվ լվացման հետ։
-</p>
-
-<p>
-<strong>Մանգան (Mn), Մոլիբդեն (Mo), Լիթիում (Li)</strong> – ցուցաբերում են կայուն, բայց նորմայից բարձր միտումներ, որոնք կարող են ազդել ջրային կենսաբազմազանության վրա երկարաժամկետ ազդեցության դեպքում։
-</p>
-</section>
-
-<section>
-<h2>📅 Շաբաթական վերլուծություն</h2>
-<p>
-Այս բաժնում կարող ես ավելացնել շաբաթական տվյալների ամփոփ վերլուծությունը կամ կոնցենտրացիաների գրաֆիկների մեկնաբանությունները:
-</p>
-</section>
-
-<footer>
-<p>© 2026 Ողջի գետի ջրի որակի վերլուծություն</p>
-</footer>
 
 </body>
 </html>
+

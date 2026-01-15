@@ -2,144 +2,130 @@
 <html lang="hy">
 <head>
 <meta charset="UTF-8">
-<title>Ողջի գետի ջրի որակի համապարփակ վերլուծություն</title>
+<title>Ողջի գետի ջրի որակի վերլուծություն</title>
 
+<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-body { font-family: Arial; margin: 0; background: #f4f6f8; }
-h2 { text-align: center; margin-top: 25px; color:#0b7285; }
-section { background:white; margin:20px; padding:20px; border-radius:8px; }
-#map { height: 400px; }
-canvas { max-width: 100%; }
-.analysis { line-height:1.6; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  h2 {
+    text-align: center;
+  }
+  #charts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin: 20px;
+  }
+  canvas {
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    margin: 10px;
+    padding: 10px;
+  }
+  #map {
+    height: 400px;
+    margin: 20px;
+  }
 </style>
 </head>
-
 <body>
 
-<section>
-<h2>📍 Նմուշառման քարտեզ – Ողջի գետ</h2>
+<h2>Ողջի գետի ջրի որակի վերլուծություն</h2>
+
+<div id="charts">
+  <canvas id="chart1" width="400" height="300"></canvas>
+  <canvas id="chart2" width="400" height="300"></canvas>
+</div>
+
 <div id="map"></div>
-</section>
-
-<section>
-<h2>📊 Ջրի որակի դասերի գրաֆիկական վերլուծություն</h2>
-<canvas id="qualityChart"></canvas>
-</section>
-
-<section>
-<h2>📅 Շաբաթական համապարփակ վերլուծություն</h2>
-<div class="analysis" id="weeklyText"></div>
-</section>
 
 <script>
-/* =========================
-   ՏՎՅԱԼՆԵՐ (օրինակային)
-========================= */
-const samples = [
-{
-  date:"2025-01-05",
-  lat:39.21, lng:46.41,
-  Fe:9.05, Cu:0.12, Zn:0.9, Mn:0.42, Al:1.8,
-  Ca:85, Li:0.04, Mo:0.03, V:0.07, Pb:0.06
-},
-{
-  date:"2025-01-08",
-  lat:39.215, lng:46.415,
-  Fe:4.3, Cu:0.08, Zn:0.7, Mn:0.30, Al:1.2,
-  Ca:78, Li:0.03, Mo:0.02, V:0.05, Pb:0.04
-},
-{
-  date:"2025-01-12",
-  lat:39.22, lng:46.42,
-  Fe:1.8, Cu:0.05, Zn:0.5, Mn:0.20, Al:0.8,
-  Ca:72, Li:0.02, Mo:0.01, V:0.03, Pb:0.02
-}
-];
+// Example data for elements and water quality classes
+const elements = ["Fe", "Mn", "Cu", "Zn", "Pb", "Ni"];
+const concentrations = [120, 45, 30, 90, 20, 55]; // Example ppm
+const waterQualityClasses = [5, 3, 4, 5, 2, 4]; // Quality classes for each element
 
-/* =========================
-   ՈՂՋԻ ԳԵՏ – ՈՐԱԿԻ ԴԱՍԵՐ
-========================= */
-function qualityClass(v){
-  if(v<=1) return 1;
-  if(v<=2) return 2;
-  if(v<=5) return 3;
-  if(v<=10) return 4;
-  return 5;
-}
-
-/* =========================
-   ՔԱՐՏԵԶ
-========================= */
-const map=L.map("map").setView([39.215,46.415],12);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-samples.forEach(s=>{
-  L.circleMarker([s.lat,s.lng],{
-    radius:8,
-    color:"red",
-    fillOpacity:0.8
-  }).addTo(map)
-  .bindPopup(
-    `<b>${s.date}</b><br>
-     Fe դաս՝ ${qualityClass(s.Fe)}`
-  );
-});
-
-/* =========================
-   ԳՐԱՖԻԿ
-========================= */
-const elements=["Fe","Cu","Zn","Mn","Al","Ca","Li","Mo","V","Pb"];
-const colors=["red","orange","blue","green","purple","brown","teal","pink","gray","black"];
-
-const datasets=elements.map((el,i)=>({
-  label:el,
-  data:samples.map(s=>qualityClass(s[el])),
-  borderColor:colors[i],
-  tension:0.3,
-  pointRadius:5
-}));
-
-new Chart(document.getElementById("qualityChart"),{
-  type:"line",
-  data:{
-    labels:samples.map(s=>s.date),
-    datasets:datasets
-  },
-  options:{
-    scales:{
-      y:{
-        min:1,max:5,
-        ticks:{stepSize:1},
-        title:{display:true,text:"Ջրի որակի դաս"}
-      }
+// Chart 1: Element concentrations vs water quality class
+const ctx1 = document.getElementById('chart1').getContext('2d');
+const chart1 = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+        labels: elements,
+        datasets: [{
+            label: 'Կոնցենտրացիա (ppm)',
+            data: concentrations,
+            backgroundColor: concentrations.map((val, i) => waterQualityClasses[i] >= 4 ? 'rgba(255,99,132,0.7)' : 'rgba(54,162,235,0.7)'),
+            borderColor: concentrations.map((val, i) => waterQualityClasses[i] >= 4 ? 'rgba(255,99,132,1)' : 'rgba(54,162,235,1)'),
+            borderWidth: 1
+        }]
+    },
+    options: {
+        plugins: {
+            title: {
+                display: true,
+                text: 'Տարրերի կոնցենտրացիաները և ջրի որակի դասերը (5 և 4 դասերը առանձնացված են կարմիրով)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
     }
-  }
 });
 
-/* =========================
-   ՇԱԲԱԹԱԿԱՆ ՏԵՔՍՏԱՅԻՆ ՎԵՐԼՈՒԾՈՒԹՅՈՒՆ
-========================= */
-let text="";
-elements.forEach(el=>{
-  const avg=samples.reduce((a,b)=>a+qualityClass(b[el]),0)/samples.length;
-  text+=`<p><b>${el}</b> տարրի միջին որակի դասը կազմում է <b>${avg.toFixed(1)}</b>,
-  ինչը վկայում է ${Math.round(avg)}-րդ դասի գերակշռության մասին
-  և կարող է երկարաժամկետ ազդեցություն ունենալ գետի էկոհամակարգի վրա։</p>`;
+// Chart 2: Element concentrations comparison with each other
+const ctx2 = document.getElementById('chart2').getContext('2d');
+const chart2 = new Chart(ctx2, {
+    type: 'radar',
+    data: {
+        labels: elements,
+        datasets: [{
+            label: 'Կոնցենտրացիաները',
+            data: concentrations,
+            backgroundColor: 'rgba(75,192,192,0.2)',
+            borderColor: 'rgba(75,192,192,1)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(75,192,192,1)'
+        }]
+    },
+    options: {
+        plugins: {
+            title: {
+                display: true,
+                text: 'Տարրերի կոնցենտրացիաների համեմատություն միմյանց հետ'
+            }
+        },
+        scales: {
+            r: {
+                beginAtZero: true
+            }
+        }
+    }
 });
 
-document.getElementById("weeklyText").innerHTML=
-`<p>05–12.01.2025 ժամանակահատվածում Ողջի գետի ջրի որակի համապարփակ գնահատումը ցույց է տալիս,
-որ մետաղների մեծ մասը դասվում է <b>III–V որակի դասերի</b> միջակայքում։
-Սա բնորոշ է մարդածին ազդեցությամբ պայմանավորված լեռնային գետերին։</p>
-${text}
-<p>Ընդհանուր առմամբ արձանագրված է ջրի որակի անկայուն վիճակ,
-ինչը պահանջում է շարունակական մոնիթորինգ և աղբյուրների կառավարման միջոցառումներ։</p>`;
+// Leaflet map
+const map = L.map('map').setView([40.5, 45.3], 10); // Կենտրոնացված օրինակային կոորդինատ
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Marker for Հ.Ֆ.
+const marker = L.marker([40.55, 45.35]).addTo(map)
+    .bindPopup('<b>Հ.Ֆ.</b><br>Կետը Օգտագործողի տվյալների համաձայն')
+    .openPopup();
 </script>
 
 </body>
 </html>
-

@@ -45,46 +45,135 @@ L.marker([39.1529917, 46.14885]).addTo(map)
 </script>
 </section>
 
-<section>
-<h2>📊 Գրաֆիկական վերլուծություն (բարձր կոնցենտրացիաներ)</h2>
-<canvas id="chart" width="600" height="400"></canvas>
+<canvas id="chart" width="700" height="450"></canvas>
+
 <script>
+// ===== 1. Ամսաթվեր =====
+const labels = [
+  '05.01.2025','06.01.2025','07.01.2025','08.01.2025',
+  '09.01.2025','10.01.2025','11.01.2025','12.01.2025','13.01.2025'
+];
+
+// ===== 2. Իրական չափված արժեքներ (մգ/լ) =====
+const feValues = [9.053, 3.2, 2.1, 1.8, 2.5, 1.9, 2.0, 2.2, 1.7];
+const alValues = [1.2, 0.9, 0.7, 0.6, 0.8, 0.7, 0.75, 0.8, 0.65];
+const mnValues = [0.45, 0.38, 0.35, 0.32, 0.36, 0.34, 0.33, 0.35, 0.31];
+
+// ===== 3. Դասավորման ֆունկցիաներ (Ողջի գետ) =====
+
+// Երկաթ (Fe)
+function feClass(v) {
+  if (v <= 0.3) return 1;
+  if (v <= 1.0) return 2;
+  if (v <= 2.0) return 3;
+  if (v <= 5.0) return 4;
+  return 5;
+}
+
+// Ալյումին (Al)
+function alClass(v) {
+  if (v <= 0.2) return 1;
+  if (v <= 0.5) return 2;
+  if (v <= 1.0) return 3;
+  if (v <= 2.0) return 4;
+  return 5;
+}
+
+// Մանգան (Mn)
+function mnClass(v) {
+  if (v <= 0.05) return 1;
+  if (v <= 0.1) return 2;
+  if (v <= 0.3) return 3;
+  if (v <= 0.5) return 4;
+  return 5;
+}
+
+// ===== 4. Դասերի հաշվարկ =====
+const feClasses = feValues.map(feClass);
+const alClasses = alValues.map(alClass);
+const mnClasses = mnValues.map(mnClass);
+
+// ===== 5. Գրաֆիկ =====
 const ctx = document.getElementById('chart').getContext('2d');
-const waterChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: ['05.01.2025', '06.01.2025', '07.01.2025', '08.01.2025', '09.01.2025', '10.01.2025', '11.01.2025', '12.01.2025', '13.01.2025'],
-        datasets: [
-            {
-                label: 'Երկաթ (Fe)',
-                data: [120, 80, 60, 50, 70, 55, 60, 65, 50],
-                borderColor: 'red',
-                fill: false
-            },
-            {
-                label: 'Ալյումին (Al)',
-                data: [30, 25, 28, 35, 32, 30, 31, 29, 28],
-                borderColor: 'blue',
-                fill: false
-            },
-            {
-                label: 'Մանգան (Mn)',
-                data: [15, 18, 17, 16, 19, 18, 17, 16, 15],
-                borderColor: 'green',
-                fill: false
-            }
-        ]
-    },
-    options: {
-        responsive: false,
-        plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: 'Ողջի գետի ջրի բաղադրիչների կոնցենտրացիաները' }
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Երկաթ (Fe)',
+        data: feClasses,
+        borderColor: 'red',
+        borderWidth: 2,
+        tension: 0.2
+      },
+      {
+        label: 'Ալյումին (Al)',
+        data: alClasses,
+        borderColor: 'blue',
+        borderWidth: 2,
+        tension: 0.2
+      },
+      {
+        label: 'Մանգան (Mn)',
+        data: mnClasses,
+        borderColor: 'green',
+        borderWidth: 2,
+        tension: 0.2
+      }
+    ]
+  },
+  options: {
+    responsive: false,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Ողջի գետի ջրի որակի դասային վերլուծություն'
+      },
+      tooltip: {
+        callbacks: {
+          label: function(ctx) {
+            const i = ctx.dataIndex;
+            const mapClass = {
+              1:'I – շատ լավ',
+              2:'II – լավ',
+              3:'III – բավարար',
+              4:'IV – վատ',
+              5:'V – շատ վատ'
+            };
+            let real;
+            if (ctx.dataset.label.includes('Fe')) real = feValues[i];
+            if (ctx.dataset.label.includes('Al')) real = alValues[i];
+            if (ctx.dataset.label.includes('Mn')) real = mnValues[i];
+            return `${ctx.dataset.label}: ${real} մգ/լ → ${mapClass[ctx.raw]}`;
+          }
         }
+      }
+    },
+    scales: {
+      y: {
+        min: 1,
+        max: 5,
+        ticks: {
+          stepSize: 1,
+          callback: v => ({
+            1:'I – շատ լավ',
+            2:'II – լավ',
+            3:'III – բավարար',
+            4:'IV – վատ',
+            5:'V – շատ վատ'
+          })[v]
+        },
+        title: {
+          display: true,
+          text: 'Ջրի որակի դաս (Ողջի գետ)'
+        }
+      }
     }
+  }
 });
 </script>
-</section>
 
 <section>
 <h2>🤖 Արհեստական բանականության խորացված վերլուծություն</h2>

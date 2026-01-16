@@ -2,112 +2,162 @@
 <html lang="hy">
 <head>
 <meta charset="UTF-8">
-<title>Ողջի գետի ջրի որակի վիզուալիզացիա</title>
+<title>Ողջի գետի ջրի որակի համապարփակ վերլուծություն (2025)</title>
+
+<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-  body {
+body {
     font-family: Arial, sans-serif;
-    margin: 20px;
-  }
-  #map {
+    margin: 0;
+    background: #f4f6f8;
+    color: #222;
+}
+header {
+    background: #1f4e79;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+section {
+    padding: 20px;
+    margin: 15px;
+    background: #fff;
+    border-radius: 8px;
+}
+h2 {
+    color: #1f4e79;
+}
+#map {
     height: 400px;
+    border-radius: 8px;
+}
+.chart-box {
     width: 100%;
-    margin-bottom: 30px;
-  }
-  .chart-container {
-    width: 400px;
-    height: 300px;
-    margin-bottom: 30px;
-  }
-  .analysis {
-    max-width: 800px;
-    line-height: 1.5;
-    margin-bottom: 50px;
-  }
+    max-width: 500px;
+    margin: 15px auto;
+}
+.analysis {
+    font-size: 14px;
+    margin-top: 8px;
+    background: #eef3f7;
+    padding: 10px;
+    border-left: 4px solid #1f4e79;
+}
+footer {
+    text-align: center;
+    padding: 15px;
+    font-size: 13px;
+    color: #666;
+}
 </style>
 </head>
+
 <body>
 
+<header>
 <h1>Ողջի գետի ջրի որակի վերլուծություն</h1>
+<p>2025թ. մոնիթորինգ • ԶՊՄԿ ազդեցության գնահատում</p>
+</header>
 
+<section>
+<h2>1. Ինտերակտիվ քարտեզ – նմուշառման կետեր</h2>
 <div id="map"></div>
+</section>
 
-<div class="chart-container">
-  <canvas id="chart1"></canvas>
-</div>
+<section>
+<h2>2. Գրաֆիկական վերլուծություն (օրինակներ)</h2>
 
-<div class="chart-container">
-  <canvas id="chart2"></canvas>
-</div>
-
+<div class="chart-box">
+<canvas id="sulfateChart"></canvas>
 <div class="analysis">
-  <h2>Տեքստային վերլուծություն և եզրակացություն</h2>
-  <p>
-    Վերլուծությունը ցույց է տալիս, որ որոշ տարրերի կոնցենտրացիաները գերազանցում են 4-րդ և 5-րդ ջրի որակի դասերը: 
-    Օրինակ՝ Fe և Y տարրերը որոշ կետերում ավելի բարձր են նորմատիվներից, ինչը կարող է ազդել ջրի ընդհանուր որակի վրա: 
-    Երկու գրաֆիկաները թույլ են տալիս տեսնել թե՛ տարրերի կոնցենտրացիաների համեմատությունը ընդհանուր դասերի հետ, և թե՛ միմյանց միջև:
-  </p>
-  <p>
-    Եզրակացություն՝ Հ.Ֆ.-ի կետում որոշ տարրերի բարձր կոնցենտրացիաները հուշում են, որ անհրաժեշտ է լրացուցիչ մոնիթորինգ և հնարավոր ջրի մաքրման միջոցառումներ: 
-    Գրաֆիկաները ցույց են տալիս կոնկրետ տարրերի գերակշռությունը, ինչը օգտակար է շարունակական վերահսկողության համար:
-  </p>
+Սուլֆատ իոնների կոնցենտրացիան 4-րդ կետում տարվա ընթացքում մնում է բարձր՝
+մի շարք ամիսներին գերազանցելով ֆոնային մակարդակները, ինչը վկայում է
+ԶՊՄԿ ազդեցության գոտուց դուրս մնացորդային աղտոտման պահպանման մասին։
 </div>
+</div>
+
+<div class="chart-box">
+<canvas id="nitrogenChart"></canvas>
+<div class="analysis">
+Ամոնիումի և ընդհանուր անօրգանական ազոտի աճը հատկապես նկատվում է
+աշնան ամիսներին, ինչը ցույց է տալիս գետի ինքնամաքրման սահմանափակ հնարավորությունները։
+</div>
+</div>
+
+</section>
+
+<section>
+<h2>3. Ծավալուն տեքստային վերլուծություն</h2>
+<p>
+Մոնիթորինգի տվյալների վերլուծությունը ցույց է տալիս, որ Ողջի գետը
+ԶՊՄԿ տարածքով հոսելիս ենթարկվում է բազմաբնույթ քիմիական ազդեցության։
+Արդյունաբերական գոտում ավելանում են սուլֆատները, հանքայնացումը,
+ծանր մետաղների (Fe, Mn, Zn, Ni) կոնցենտրացիաները։
+</p>
+<p>
+ԶՊՄԿ ազդեցության գոտուց հետո (4-րդ կետ) որոշ ցուցանիշներ նվազում են,
+սակայն մի շարք տարրեր մնում են բարձր՝ վկայելով մնացորդային ազդեցության մասին։
+Ըստ ՀՀ Ողջի գետի ջրի որակի դասերի՝ տվյալ հատվածում ջրի որակը
+համապատասխանում է հիմնականում IV–V դասերի։
+</p>
+</section>
+
+<section>
+<h2>4. Եզրակացություն</h2>
+<ul>
+<li>ԶՊՄԿ տարածքում գետը զգալիորեն աղտոտվում է սուլֆատներով և ազոտային միացություններով</li>
+<li>Ծանր մետաղների մի մասը ունի կուտակվող բնույթ</li>
+<li>Ազդեցության գոտուց հետո գետի ինքնամաքրման գործընթացը ամբողջական չէ</li>
+<li>Անհրաժեշտ է շարունակական մոնիթորինգ և կանխարգելիչ միջոցառումներ</li>
+</ul>
+</section>
+
+<footer>
+© 2025 • Ողջի գետի ջրի որակի վերլուծություն • Ստեղծված է AI աջակցությամբ
+</footer>
 
 <script>
-  // Leaflet քարտեզ
-  var map = L.map('map').setView([39.5, 46.4], 10); // Օրինակ՝ Հայաստան
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: 'Map data © OpenStreetMap contributors'
-  }).addTo(map);
-  L.marker([39.5, 46.4]).addTo(map).bindPopup('Հ.Ֆ. կետ').openPopup();
+// Քարտեզ
+var map = L.map('map').setView([39.15, 46.15], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+}).addTo(map);
 
-  // Chart 1 - Տարրերի կոնցենտրացիա vs Ջրի որակի դասեր
-  var ctx1 = document.getElementById('chart1').getContext('2d');
-  var chart1 = new Chart(ctx1, {
-    type: 'bar',
+L.marker([39.1573, 46.1168]).addTo(map).bindPopup("Ողջի (ֆոնային)");
+L.marker([39.1529, 46.1434]).addTo(map).bindPopup("Ողջի՝ ՀՋՏԱ-ից հետո");
+L.marker([39.1496, 46.1596]).addTo(map).bindPopup("Սպիտակ ջուր խառնվելուց հետո");
+L.marker([39.1513, 46.1850]).addTo(map).bindPopup("Ողջի 2 (ազդեցությունից հետո)");
+
+// Գրաֆիկներ
+new Chart(document.getElementById('sulfateChart'), {
+    type: 'line',
     data: {
-      labels: ['Fe', 'Y', 'Zn', 'Cu', 'Mn'],
-      datasets: [{
-        label: 'Կոնցենտրացիա (մգ/լ)',
-        data: [9.053, 5.2, 3.4, 2.5, 1.8], // Օրինակ տվյալներ
-        backgroundColor: 'rgba(54, 162, 235, 0.7)'
-      },{
-        label: 'Ջրի որակի դաս (1-5)',
-        data: [4, 5, 3, 4, 2],
-        type: 'line',
-        borderColor: 'rgba(255, 99, 132, 0.9)',
-        borderWidth: 2,
-        fill: false,
-        yAxisID: 'y1'
-      }]
-    },
-    options: {
-      responsive: false,
-      scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'Կոնցենտրացիա' } },
-        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Ջրի դաս' }, grid: { drawOnChartArea: false } }
-      }
+        labels: ["01","03","04","05","06","07","08","09","10","11"],
+        datasets: [{
+            label: "Սուլֆատ (մգ/լ)",
+            data: [316,223,325,61,36,322,322,341,261,318],
+            borderWidth: 2
+        }]
     }
-  });
+});
 
-  // Chart 2 - Տարրերի համեմատություն միմյանց
-  var ctx2 = document.getElementById('chart2').getContext('2d');
-  var chart2 = new Chart(ctx2, {
-    type: 'radar',
+new Chart(document.getElementById('nitrogenChart'), {
+    type: 'line',
     data: {
-      labels: ['Fe', 'Y', 'Zn', 'Cu', 'Mn'],
-      datasets: [{
-        label: 'Կոնցենտրացիա (մգ/լ)',
-        data: [9.053, 5.2, 3.4, 2.5, 1.8], // Օրինակ տվյալներ
-        backgroundColor: 'rgba(255, 206, 86, 0.2)',
-        borderColor: 'rgba(255, 206, 86, 1)',
-        borderWidth: 2
-      }]
-    },
-    options: { responsive: false }
-  });
+        labels: ["01","03","04","05","06","07","08","09","10","11"],
+        datasets: [{
+            label: "Ամոնիում (մգ/լ)",
+            data: [5.3,0.9,0.48,0.26,0.37,0.49,1.0,8.4,5.1,9.0],
+            borderWidth: 2
+        }]
+    }
+});
 </script>
 
 </body>

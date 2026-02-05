@@ -34,6 +34,7 @@
     th,td{border:1px solid #e9ecef;padding:7px 8px;text-align:left;font-size:12px}
     th{position:sticky;top:0;background:#f6f7f9;z-index:1}
     footer{text-align:center;padding:16px;color:#666;font-size:12px}
+    .hr{height:1px;background:#e9ecef;margin:10px 0}
   </style>
 </head>
 
@@ -42,8 +43,9 @@
   <h1>Ողջի գետի ջրի որակի մոնիթորինգ — ԶՊՄԿ ազդեցության գոտու վերլուծություն</h1>
   <p>
     Կայքում ավելացված են մոնիթորինգի 7 կետ (ֆոնային, ազդեցության աղբյուրներ և խառնվելուց հետո կետեր)։
-    Այստեղ կարող եք դիտել ծանր մետաղների ժամանակային փոփոխությունները, աղբյուրների հարաբերական ազդեցությունը
-    և ազդեցության գոտուց հետո աղտոտվածության պահպանման/նվազման միտումը։
+    Այստեղ կարող եք դիտել ծանր մետաղների ժամանակային փոփոխությունները, աղբյուրների հարաբերական ազդեցությունը,
+    ազդեցության գոտուց հետո աղտոտվածության պահպանման/նվազման միտումը, ինչպես նաև՝ ֆիզիկաքիմիական ու աղային ցուցիչների
+    «ֆոնային vs վերջնակետ» պահպանման գրաֆիկները։
   </p>
 </header>
 
@@ -102,7 +104,7 @@
 
     <div class="row" style="margin-top:10px">
       <div class="col">
-        <h3>Ազդեցության գոտուց հետո պահպանման գրաֆիկ (ֆոնային vs վերջնակետ)</h3>
+        <h3>Ազդեցության գոտուց հետո պահպանման գրաֆիկ (ֆոնային vs վերջնակետ) — Մետաղներ</h3>
         <canvas id="persistChart" width="420" height="300"></canvas>
       </div>
 
@@ -111,38 +113,26 @@
         <div id="summaryText" class="hint"></div>
       </div>
     </div>
-  </section>
 
-  <!-- ✅ ՆՈՐ ԲԱԺԻՆ՝ ՖԻԶԻԿԱՔԻՄԻԱԿԱՆ/ԱՂԱՅԻՆ ՑՈՒՑԻՉՆԵՐ -->
-  <section>
-    <h2>Ֆիզիկաքիմիական և աղային ցուցիչների գրաֆիկական վերլուծություն</h2>
+    <div class="hr"></div>
+
+    <h3>Ֆիզիկաքիմիական և աղային ցուցիչներ — պահպանման գրաֆիկ (ֆոնային vs վերջնակետ)</h3>
 
     <div class="controls">
-      <label class="small">Ընտրեք կետը՝</label>
-      <select id="siteSelect"></select>
-
       <label class="small">Ընտրեք ցուցիչը՝</label>
-      <select id="paramSelect"></select>
-
-      <label class="small">Գրաֆիկի չափս՝</label>
-      <select id="physSizeSelect">
-        <option value="small" selected>Փոքր (520×340)</option>
-        <option value="medium">Միջին (720×380)</option>
-      </select>
-
-      <button id="physRefreshBtn" type="button">Թարմացնել</button>
+      <select id="physSelect"></select>
+      <span class="small">• Նույն տրամաբանությամբ՝ P1 (ֆոնային) vs P7 (վերջնակետ)</span>
     </div>
 
     <div class="row">
       <div class="col">
-        <h3>Ժամանակային փոփոխություն (ընտրված կետ + ցուցիչ)</h3>
-        <canvas id="physChart" width="520" height="340"></canvas>
-        <div class="small">Նշում․ null/բացակայող արժեքները չեն մտնում միջինի հաշվարկի մեջ։</div>
+        <canvas id="physPersistChart" width="420" height="300"></canvas>
+        <div class="small">
+          Եթե գրաֆիկը դատարկ է՝ նշանակում է տվյալ ցուցիչի թվերը դեռ չեն լրացվել <b>physchemData</b> բլոկում (ստորև՝ կոդում)։
+        </div>
       </div>
-
       <div class="col">
-        <h3>Կարճ մեկնաբանություն</h3>
-        <div id="physSummary" class="hint"></div>
+        <div id="physSummaryText" class="hint"></div>
       </div>
     </div>
   </section>
@@ -153,6 +143,14 @@
       Ցուցադրվում են միայն մետաղները/ծանր մետաղները, որոնք օգտագործվում են կայքի գրաֆիկներում։
     </div>
     <div class="tableWrap" id="tableWrap"></div>
+  </section>
+
+  <section>
+    <h2>Տվյալների ամփոփ աղյուսակ (ֆիզիկաքիմիական և աղային ցուցիչներ)</h2>
+    <div class="hint">
+      Այս աղյուսակը լցվում է <b>physchemData</b> տվյալներից։ Եթե դեռ չես լրացրել, այստեղ շատ «—» կլինի։
+    </div>
+    <div class="tableWrap" id="physTableWrap"></div>
   </section>
 </main>
 
@@ -171,7 +169,6 @@ function parseValue(v){
   const s = String(v).trim();
   if(!s) return null;
   if(s.startsWith("<")){
-    // օրինակ՝ "<0.013" -> 0.0065
     const num = Number(s.slice(1));
     return Number.isFinite(num) ? num/2 : null;
   }
@@ -187,12 +184,9 @@ function fmt(v){
   return (Math.abs(v) < 1) ? v.toFixed(4) : v.toFixed(3);
 }
 
-function uniq(arr){
-  return [...new Set(arr)];
-}
+function uniq(arr){ return [...new Set(arr)]; }
 
 function sortDates(dates){
-  // dd.mm.yyyy
   const toKey = (d)=>{
     const [dd,mm,yy] = d.split(".").map(Number);
     return yy*10000 + mm*100 + dd;
@@ -207,7 +201,7 @@ function average(arr){
 }
 
 /* =========================================
-   2) ԿԵՏԵՐ, ԿՈՈՐԴԻՆԱՏՆԵՐ, ՄԵՏԱՂՆԵՐ
+   2) ԿԵՏԵՐ, ԿՈՈՐԴԻՆԱՏՆԵՐ, ՑՈՒՑԻՉՆԵՐ
    ========================================= */
 
 const pointsMeta = [
@@ -227,11 +221,34 @@ const typeStyle = {
   downstream: {color:"#e03131", radius:8}
 };
 
-// Կայքի հիմնական մետաղների ցանկ
+// Մետաղներ
 const METALS = ["Al","V","Cr","Fe","Mn","Co","Ni","Cu","Zn","As","Se","Mo","Cd","Pb"];
 
+// Ֆիզիկաքիմիական + աղային ցուցիչների ցուցակ
+// units: ավելացվում է displayUnits-ում
+const PHYS = ["pH","EC","TDS","TSS","Turbidity","Hardness","Alkalinity","Cl","SO4","NO3","NH4","Na","K","Ca","Mg","HCO3"];
+
+const displayUnits = {
+  pH: "",
+  EC: "µS/cm",
+  TDS: "mg/L",
+  TSS: "mg/L",
+  Turbidity: "NTU",
+  Hardness: "mg/L (as CaCO3)",
+  Alkalinity: "mg/L (as CaCO3)",
+  Cl: "mg/L",
+  SO4: "mg/L",
+  NO3: "mg/L",
+  NH4: "mg/L",
+  Na: "mg/L",
+  K: "mg/L",
+  Ca: "mg/L",
+  Mg: "mg/L",
+  HCO3: "mg/L"
+};
+
 /* ===================================================
-   3) ՄՈՆԻԹՈՐԻՆԳ ՏՎՅԱԼՆԵՐ (ՔՈ ՏՎԱԾ ԹՎԵՐԸ)
+   3) ՄԵՏԱՂՆԵՐԻ ՏՎՅԱԼՆԵՐ (ՔՈ ՏՎԱԾ ԹՎԵՐԸ)
    =================================================== */
 
 const data = {
@@ -246,7 +263,6 @@ const data = {
     "14.10.2025": {Al:0.0195022,V:0.0004161,Cr:0.0021,Fe:0.279,Mn:0.0036,Co:0.0001592,Ni:0.0056488,Cu:0.00325,Zn:0.00497,As:0.0027,Se:0.0005144,Mo:0.007,Cd:0.00030,Pb:0.0001109},
     "18.11.2025": {Al:"<0.01",V:0.0002097,Cr:0.0035816,Fe:0.168,Mn:0.0034,Co:0.0001322,Ni:0.0041738,Cu:0.00185,Zn:0.00232,As:0.0017,Se:0.0003678,Mo:0.007,Cd:"<0.0001",Pb:"<0.0001"},
   },
-
   P2: {
     "29.01.2025": {Al:"<0.01",V:0.000537,Cr:0.00142,Fe:1.599,Mn:0.00369,Co:0.000638,Ni:0.0111,Cu:0.205,Zn:0.0281,As:0.00278,Se:0.239,Mo:0.679,Cd:0.0023895,Pb:0.0001515},
     "25.03.2025": {Al:"<0.01",V:0.000395,Cr:"<0.0001",Fe:1.041,Mn:0.00170,Co:0.000399,Ni:0.0101,Cu:0.226,Zn:0.0331,As:0.00240,Se:0.175,Mo:0.482,Cd:0.002407,Pb:"<0.0001"},
@@ -259,7 +275,6 @@ const data = {
     "14.10.2025": {Al:"<0.01",V:0.000739,Cr:0.00198,Fe:2.293,Mn:0.00257,Co:0.0011525,Ni:0.0454,Cu:0.339,Zn:0.0535,As:0.00358,Se:0.256,Mo:0.695,Cd:0.003772,Pb:"<0.0001"},
     "18.11.2025": {Al:0.0171305,V:0.000590,Cr:0.00288,Fe:1.255,Mn:0.00312,Co:0.0008245,Ni:0.0305,Cu:0.259,Zn:0.0481,As:0.00265,Se:0.218,Mo:0.580,Cd:0.0037,Pb:0.000206},
   },
-
   P3: {
     "29.01.2025": {Al:"<0.01",V:0.000613,Cr:0.00102,Fe:0.746,Mn:0.00171,Co:0.0002706,Ni:0.00524,Cu:0.0573,Zn:0.0280,As:0.00267,Se:0.0908,Mo:0.503,Cd:0.00167,Pb:0.0003006},
     "25.03.2025": {Al:"<0.01",V:0.000580,Cr:0.00011,Fe:0.633,Mn:0.00157,Co:0.0002577,Ni:0.00534,Cu:0.0716,Zn:0.0147,As:0.00237,Se:0.0842,Mo:0.466,Cd:0.00202,Pb:"<0.0001"},
@@ -272,7 +287,6 @@ const data = {
     "14.10.2025": {Al:73.9596382,V:0.002654,Cr:0.00114,Fe:0.001,Mn:1.14888,Co:0.0046161,Ni:0.00060,Cu:0.0188,Zn:0.0758,As:0.08763,Se:0.0033,Mo:0.564,Cd:0.45435,Pb:0.0278841},
     "18.11.2025": {Al:0.0105066,V:0.000499,Cr:0.00368,Fe:0.473,Mn:0.00109,Co:0.0003418,Ni:0.01175,Cu:0.0498,Zn:0.0122,As:0.00209,Se:0.0651,Mo:0.291,Cd:0.00182,Pb:0.000163},
   },
-
   P4: {
     "29.01.2025": {Al:0.1090,V:0.00103,Cr:0.00266,Fe:1.986,Mn:0.0148,Co:0.001075,Ni:0.00805,Cu:0.0278,Zn:0.0578,As:0.00369,Se:0.180,Mo:0.658,Cd:0.00204,Pb:0.00727},
     "25.02.2025": {Al:0.0003,V:0.00077,Cr:"<0.0001",Fe:1.441,Mn:0.0018,Co:0.0005255,Ni:0.00543,Cu:0.0210,Zn:0.0076,As:0.00321,Se:0.169,Mo:0.590,Cd:0.00188,Pb:"<0.0001"},
@@ -284,9 +298,8 @@ const data = {
     "12.08.2025": {Al:0.0265,V:0.00194,Cr:0.00881,Fe:1.479,Mn:0.0051,Co:0.0007245,Ni:0.02374,Cu:0.0369,Zn:0.0105,As:0.00406,Se:0.130,Mo:0.561,Cd:0.00228,Pb:"<0.0001"},
     "16.09.2025": {Al:0.0151,V:0.00094,Cr:0.00750,Fe:1.638,Mn:0.0075,Co:0.00066738,Ni:0.01494,Cu:0.0488,Zn:0.0134,As:0.00352,Se:0.152,Mo:0.562,Cd:0.00235,Pb:0.00011},
     "14.10.2025": {Al:0.0117,V:0.00160,Cr:0.00346,Fe:2.515,Mn:0.0087,Co:0.0013768,Ni:0.03785,Cu:0.0632,Zn:0.0451,As:0.00476,Se:0.192,Mo:0.644,Cd:0.00348,Pb:"<0.0001"},
-    "18.11.2025": {Al:0.0104,V:0.000095,Cr:0.00324,Fe:1.349,Mn:0.0040,Co:0.000982,Ni:0.02937,Cu:0.0395,Zn:0.0147,As:0.00362,Se:0.170,Mo:0.590,Cd:0.00375,Pb:0.00012},
+    "18.11.2025": {Al:0.0104,V:0.00095,Cr:0.00324,Fe:1.349,Mn:0.0040,Co:0.000982,Ni:0.02937,Cu:0.0395,Zn:0.0147,As:0.00362,Se:0.170,Mo:0.590,Cd:0.00375,Pb:0.00012},
   },
-
   P5: {
     "29.01.2025": {Al:0.0584,V:0.000668,Cr:0.00213,Fe:0.661,Mn:0.0302,Co:0.00048,Ni:0.00453,Cu:0.0138,Zn:0.0347,As:0.00182,Se:0.0368,Mo:0.183,Cd:0.0005811,Pb:0.0005043},
     "25.02.2025": {Al:0.0398,V:0.000758,Cr:0.00099,Fe:0.538,Mn:0.0280,Co:0.0004947,Ni:0.00247,Cu:0.0091,Zn:0.0120,As:0.00184,Se:0.0321,Mo:0.181,Cd:0.0005628,Pb:0.0001137},
@@ -297,7 +310,6 @@ const data = {
     "14.10.2025": {Al:0.0299,V:0.001780,Cr:0.00252,Fe:0.857,Mn:0.0912,Co:0.0008024,Ni:0.01287,Cu:0.0110,Zn:0.0390,As:0.00263,Se:0.0317,Mo:0.216,Cd:0.0013984,Pb:0.0002468},
     "18.11.2025": {Al:"<0.01",V:0.000885,Cr:0.00132,Fe:0.608,Mn:0.0684,Co:0.0025116,Ni:0.01468,Cu:0.0049,Zn:0.0125,As:0.00313,Se:0.0168,Mo:0.362,Cd:0.0020847,Pb:"<0.0001"},
   },
-
   P6: {
     "29.01.2025": {Al:0.00340,V:0.000903,Cr:0.00242,Fe:1.892,Mn:0.172,Co:0.0008625,Ni:0.00871,Cu:0.00946,Zn:0.00561,As:0.00273,Se:0.214,Mo:1.183,Cd:0.00357,Pb:0.0002665},
     "25.02.2025": {Al:0.00139,V:0.000890,Cr:0.00021,Fe:1.730,Mn:0.221,Co:0.000859,Ni:0.00569,Cu:0.01013,Zn:0.00685,As:0.00259,Se:0.200,Mo:1.175,Cd:0.00363,Pb:"<0.0001"},
@@ -311,7 +323,6 @@ const data = {
     "14.10.2025": {Al:0.01040,V:0.001746,Cr:0.00278,Fe:2.727,Mn:0.008,Co:0.0014295,Ni:0.04257,Cu:0.07126,Zn:0.07122,As:0.00535,Se:0.218,Mo:0.719,Cd:0.00378,Pb:0.000199},
     "18.11.2025": {Al:"<0.01",V:0.000910,Cr:0.00421,Fe:1.543,Mn:0.091,Co:0.001241,Ni:0.03748,Cu:0.02926,Zn:0.00633,As:0.00318,Se:0.228,Mo:0.990,Cd:0.00595,Pb:"<0.0001"},
   },
-
   P7: {
     "29.01.2025": {Al:0.00761,V:0.000837,Cr:0.00151,Fe:0.507,Mn:0.0472,Co:0.0003594,Ni:0.00305,Cu:0.00965,Zn:0.00735,As:0.00170,Se:0.0287,Mo:0.216,Cd:0.0006732,Pb:0.0001864},
     "25.03.2025": {Al:"<0.01",V:0.001255,Cr:0.00084,Fe:0.596,Mn:0.0649,Co:0.0010596,Ni:0.00434,Cu:0.00841,Zn:0.00278,As:0.00290,Se:0.0167,Mo:0.301,Cd:0.0014217,Pb:"<0.0001"},
@@ -323,6 +334,27 @@ const data = {
     "16.09.2025": {Al:0.042712911,V:0.001648,Cr:0.01058,Fe:0.783,Mn:0.1713,Co:0.000791541,Ni:0.00758,Cu:0.01653,Zn:0.05250,As:0.00452,Se:0.0427,Mo:0.390,Cd:0.001635696,Pb:0.000404262},
     "14.10.2025": {Al:0.023441,V:0.001926,Cr:0.00221,Fe:0.892,Mn:0.0940,Co:0.0007786,Ni:0.01264,Cu:0.01073,Zn:0.02752,As:0.00278,Se:0.0329,Mo:0.221,Cd:0.0012372,Pb:0.0001802},
     "18.11.2025": {Al:"<0.01",V:0.000818,Cr:0.00269,Fe:0.381,Mn:0.0493,Co:0.001007124,Ni:0.01092,Cu:0.01097,Zn:0.00602,As:0.00246,Se:0.0222,Mo:0.269,Cd:0.001631904,Pb:0.000255786},
+  },
+};
+
+/* ===================================================
+   3B) ՖԻԶԻԿԱՔԻՄԻԱԿԱՆ/ԱՂԱՅԻՆ ՏՎՅԱԼՆԵՐ (ԼՐԱՑՆԵԼ ՔՈ ԹՎԵՐԸ)
+   Կառուցվածք՝ physchemData[pointId][date][indicator] = value
+   Օրինակ՝
+   physchemData.P1["25.03.2025"] = {pH:8.2, EC:420, TDS:260, Cl:18, SO4:32, ...}
+   =================================================== */
+
+const physchemData = {
+  P1: {
+    // "25.03.2025": {pH: 8.2, EC: 410, TDS: 255, Turbidity: 3.1, Cl: 18, SO4: 32, NO3: 4.2},
+  },
+  P2: {},
+  P3: {},
+  P4: {},
+  P5: {},
+  P6: {},
+  P7: {
+    // "25.03.2025": {pH: 8.0, EC: 560, TDS: 350, Turbidity: 7.8, Cl: 28, SO4: 55, NO3: 6.1},
   },
 };
 
@@ -360,7 +392,7 @@ function addPointsToMap(){
 addPointsToMap();
 
 /* =========================================
-   5) UI՝ մետաղների ցուցակ
+   5) UI՝ ցուցակներ
    ========================================= */
 
 const metalSelect = document.getElementById("metalSelect");
@@ -372,11 +404,21 @@ METALS.forEach(m=>{
 });
 metalSelect.value = "Cu";
 
+const physSelect = document.getElementById("physSelect");
+PHYS.forEach(k=>{
+  const opt = document.createElement("option");
+  opt.value = k;
+  const unit = displayUnits[k] ? ` (${displayUnits[k]})` : "";
+  opt.textContent = `${k}${unit}`;
+  physSelect.appendChild(opt);
+});
+physSelect.value = "EC";
+
 /* =========================================
-   6) ԳՐԱՖԻԿՆԵՐ (ՄԵՏԱՂՆԵՐ)
+   6) ԳՐԱՖԻԿՆԵՐ
    ========================================= */
 
-let tsChart=null, srcPctChart=null, persistChart=null;
+let tsChart=null, srcPctChart=null, persistChart=null, physPersistChart=null;
 
 function buildTimeSeries(metal){
   const allDates = uniq(pointsMeta.flatMap(p=>Object.keys(data[p.id] || {})));
@@ -393,6 +435,7 @@ function buildTimeSeries(metal){
   return {labels, datasets};
 }
 
+// Δ(1->3) = բացահանք ազդեցություն, Δ(3->5)=Սպիտակ ջուր, Δ(5->7)=Դարազամ/այլ
 function calcSourcePctByIncrements(metal){
   const P1="P1", P3="P3", P5="P5", P7="P7";
 
@@ -412,7 +455,10 @@ function calcSourcePctByIncrements(metal){
   const incOpenPit = meanOverCommon(P1, P3);
   const incSpitak  = meanOverCommon(P3, P5);
   const incAfter   = meanOverCommon(P5, P7);
-  const total = [incOpenPit,incSpitak,incAfter].map(x=>Number.isFinite(x)?x:0).reduce((a,b)=>a+b,0);
+
+  const total = [incOpenPit,incSpitak,incAfter]
+    .map(x=>Number.isFinite(x)?x:0)
+    .reduce((a,b)=>a+b,0);
 
   const pct = (x)=> (total>0 ? (x/total)*100 : 0);
 
@@ -441,9 +487,28 @@ function buildPersist(metal){
   return {labels, bg, ds};
 }
 
+function buildPhysPersist(ind){
+  const labels = [];
+  const bg = [];
+  const ds = [];
+
+  const d1 = Object.keys(physchemData.P1||{});
+  const d7 = Object.keys(physchemData.P7||{});
+  const common = sortDates(d1.filter(x=>d7.includes(x)));
+
+  common.forEach(d=>{
+    labels.push(d);
+    bg.push(parseValue(physchemData.P1[d]?.[ind]));
+    ds.push(parseValue(physchemData.P7[d]?.[ind]));
+  });
+
+  return {labels, bg, ds};
+}
+
 function renderCharts(){
   const metal = metalSelect.value;
 
+  // time series
   const ts = buildTimeSeries(metal);
   const ctx1 = document.getElementById("tsChart").getContext("2d");
   if(tsChart) tsChart.destroy();
@@ -453,19 +518,29 @@ function renderCharts(){
     options: {
       responsive: false,
       plugins: {legend:{display:true}},
-      scales: { y: {beginAtZero:true, title:{display:true, text:`${metal} (mg/L)`}} }
+      scales: {
+        y: {beginAtZero:true, title:{display:true, text:`${metal} (mg/L)`}}
+      }
     }
   });
 
+  // source pct
   const sp = calcSourcePctByIncrements(metal);
   const ctx2 = document.getElementById("srcPctChart").getContext("2d");
   if(srcPctChart) srcPctChart.destroy();
   srcPctChart = new Chart(ctx2, {
     type: "bar",
-    data: { labels: sp.labels, datasets: [{label: `${metal}՝ աճի բաժանում (%)`, data: sp.values}] },
-    options: { responsive: false, scales: {y:{beginAtZero:true, max:100, title:{display:true,text:"%"}}} }
+    data: {
+      labels: sp.labels,
+      datasets: [{label: `${metal}՝ աճի բաժանում (%)`, data: sp.values}]
+    },
+    options: {
+      responsive: false,
+      scales: {y:{beginAtZero:true, max:100, title:{display:true,text:"%"}}}
+    }
   });
 
+  // metal persistence
   const ps = buildPersist(metal);
   const ctx3 = document.getElementById("persistChart").getContext("2d");
   if(persistChart) persistChart.destroy();
@@ -475,7 +550,7 @@ function renderCharts(){
       labels: ps.labels,
       datasets: [
         {label:`Ֆոնային (P1) — ${metal}`, data: ps.bg, tension:0.25},
-        {label:`ԶՊՄԿ ազդեցությունից հետո (P7) — ${metal}`, data: ps.ds, tension:0.25}
+        {label:`Վերջնակետ (P7) — ${metal}`, data: ps.ds, tension:0.25}
       ]
     },
     options: {
@@ -486,6 +561,86 @@ function renderCharts(){
   });
 
   renderSummary(metal, sp);
+}
+
+function renderPhysPersist(){
+  const ind = physSelect.value;
+  const unit = displayUnits[ind] ? ` (${displayUnits[ind]})` : "";
+
+  const ps = buildPhysPersist(ind);
+  const ctx = document.getElementById("physPersistChart").getContext("2d");
+  if(physPersistChart) physPersistChart.destroy();
+
+  physPersistChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ps.labels,
+      datasets: [
+        {label:`Ֆոնային (P1) — ${ind}${unit}`, data: ps.bg, tension:0.25},
+        {label:`Վերջնակետ (P7) — ${ind}${unit}`, data: ps.ds, tension:0.25}
+      ]
+    },
+    options: {
+      responsive:false,
+      plugins:{legend:{display:true}},
+      scales:{y:{beginAtZero:false, title:{display:true, text:`${ind}${unit}`}}}
+    }
+  });
+
+  // պարզ տեքստային ամփոփում՝ P7/P1 հարաբերակցություն
+  const d1 = Object.keys(physchemData.P1||{});
+  const d7 = Object.keys(physchemData.P7||{});
+  const common = d1.filter(x=>d7.includes(x));
+
+  const ratios = common.map(d=>{
+    const a = parseValue(physchemData.P1[d]?.[ind]);
+    const b = parseValue(physchemData.P7[d]?.[ind]);
+    if(!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    // pH-ի համար հարաբերակցությունը միշտ իմաստ չունի, բայց թող հաշվի՝ «տարբերություն»
+    if(ind==="pH") return b - a; // ΔpH
+    if(a===0) return null;
+    return b/a; // ratio
+  }).filter(x=>Number.isFinite(x));
+
+  const mean = average(ratios);
+
+  let text = "";
+  if(!common.length){
+    text = `<p><b>${ind}</b> ցուցիչի համար P1 և P7 կետերում համընկնող ամսաթվեր այս պահին չկան։ Լրացրու physchemData-ում։</p>`;
+  } else if(!Number.isFinite(mean)){
+    text = `<p><b>${ind}</b> ցուցիչի տվյալները մասամբ բացակայում են։ Լրացրու physchemData-ում՝ որպեսզի հաշվարկվի միջին փոփոխությունը։</p>`;
+  } else {
+    if(ind==="pH"){
+      const delta = mean;
+      let verdict = "փոքր փոփոխություն";
+      if(Math.abs(delta) >= 0.5) verdict = "զգալի փոփոխություն";
+      if(Math.abs(delta) >= 1.0) verdict = "ուժեղ փոփոխություն (ուշադրություն պահանջող)";
+      text = `
+        <p>
+          <b>${ind}</b>-ի համար միջին տարբերությունը (P7 − P1) ≈ <b>${delta.toFixed(2)}</b>։
+          Սա ցույց է տալիս՝ <b>${verdict}</b>։
+        </p>
+        <p class="small">Նշում․ pH-ը լոգարիթմական սանդղակ է, ուստի «հարաբերակցություն»-ը միշտ ճիշտ մեկնաբանություն չէ։</p>
+      `;
+    } else {
+      const ratio = mean;
+      let verdict = "ֆոնայինին մոտ";
+      if(ratio >= 1.2) verdict = "միջին աճ/պահպանություն կա";
+      if(ratio >= 2.0) verdict = "բարձր աճ/պահպանություն կա (ուշադրություն պահանջող)";
+      if(ratio <= 0.8) verdict = "նվազում կա վերջնակետում";
+      text = `
+        <p>
+          <b>${ind}</b> ցուցիչի համար միջին հարաբերակցությունը (P7/P1) ≈ <b>${ratio.toFixed(2)}</b>։
+          Արդյունք՝ <b>${verdict}</b>։
+        </p>
+        <p class="small">
+          Եթե ուզում ես «էկոլոգիական դասով» գնահատում (I–V), ուղարկիր այդ ցուցիչների համար կիրառվող դասակարգման սանդղակը (քո աղյուսակի դասերը)՝ և կավելացնեմ ավտոմատ գնահատիչ։
+        </p>
+      `;
+    }
+  }
+
+  document.getElementById("physSummaryText").innerHTML = text;
 }
 
 function renderSummary(metal, sp){
@@ -517,26 +672,31 @@ function renderSummary(metal, sp){
     <p>
       <b>${metal}</b> մետաղի համար ժամանակային գրաֆիկը ցույց է տալիս տարբեր կետերի միջև տարբերակված վարք։
       «Աղբյուրների հարաբերական ներդրում» գրաֆիկը հաշվարկված է շղթայական միջին աճերով՝
-      <b>ֆոնային (1) → բացահանքից հետո (3) → Սպիտակ ջրից հետո (5) → ԶՊՄԿ ազդեցությունից հետո (7)</b>։
+      <b>ֆոնային (1) → բացահանքից հետո (3) → Սպիտակ ջրից հետո (5) → վերջնակետ (7)</b>։
     </p>
+
     <p>
       Ըստ միջին աճի բաժանման՝ ամենամեծ բաժինը ցույց է տալիս՝
       <b>${topSource}</b>՝ մոտ <b>${maxPct.toFixed(1)}%</b>։
     </p>
+
     <p>
       Ֆոնայինի (P1) նկատմամբ վերջնակետի (P7) միջին հարաբերակցությունը մոտ է՝
       <b>${Number.isFinite(meanRatio) ? meanRatio.toFixed(2) : "—"}</b>։
       Սա նշանակում է՝ <b>${persistenceText}</b>։
     </p>
+
     <p class="small">
       Թվային մանրամասներ (միջին աճ mg/L):<br>
       Բացահանք ազդեցություն (1→3): <b>${fmt(inc1)}</b> •
       Սպիտակ ջուր (3→5): <b>${fmt(inc2)}</b> •
       Դարազամ/այլ (5→7): <b>${fmt(inc3)}</b>
     </p>
+
     <p class="small">
-      Նշում․ աղբյուրների %-երը առավել ճշգրիտ են դառնում, երբ կան նաև դեբիտների (Q) տվյալներ։
-      Այստեղ կիրառվել է կոնցենտրացիաների շղթայական աճերի համեմատական մոտեցում։
+      Նշում․ «որ աղբյուրից քանի % է աղտոտվում» հաշվարկը առավել ճշգրիտ է, երբ ունենք նաև
+      հոսքերի/դեբիտների տվյալներ (Q) յուրաքանչյուր աղբյուրի և գետի համար։ Այստեղ կիրառվել է
+      կոնցենտրացիաների վրա հիմնված համեմատական (շղթայական աճի) մոտեցում։
     </p>
   `;
 }
@@ -564,14 +724,41 @@ function renderMetalsTable(){
   document.getElementById("tableWrap").innerHTML = html;
 }
 
+function renderPhysTable(){
+  const cols = ["Կետ","Ամսաթիվ"].concat(PHYS.map(k=>{
+    const unit = displayUnits[k] ? ` (${displayUnits[k]})` : "";
+    return `${k}${unit}`;
+  }));
+
+  let html = `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+
+  pointsMeta.forEach(p=>{
+    const dates = sortDates(Object.keys(physchemData[p.id]||{}));
+    dates.forEach(d=>{
+      html += `<tr>
+        <td>${p.name}</td>
+        <td>${d}</td>
+        ${PHYS.map(k=>{
+          const v = physchemData[p.id]?.[d]?.[k];
+          const pv = parseValue(v);
+          return `<td>${v===undefined ? "—" : (typeof v==="string" ? v : fmt(pv))}</td>`;
+        }).join("")}
+      </tr>`;
+    });
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById("physTableWrap").innerHTML = html;
+}
+
 /* =========================================
-   7) ՉԱՓՍԵՐԻ ԿԱՌԱՎԱՐՈՒՄ (ՄԵՏԱՂՆԵՐ)
+   7) ՉԱՓՍԵՐԻ ԿԱՌԱՎԱՐՈՒՄ
    ========================================= */
 
 function applyCanvasSize(){
   const size = document.getElementById("sizeSelect").value;
   const dims = (size==="medium") ? {w:520,h:340} : {w:420,h:300};
-  ["tsChart","srcPctChart","persistChart"].forEach(id=>{
+  ["tsChart","srcPctChart","persistChart","physPersistChart"].forEach(id=>{
     const c = document.getElementById(id);
     c.width = dims.w;
     c.height = dims.h;
@@ -579,294 +766,27 @@ function applyCanvasSize(){
 }
 
 /* =========================================
-   8) ՖԻԶԻԿԱՔԻՄԻԱԿԱՆ / ԱՂԱՅԻՆ ՑՈՒՑԻՉՆԵՐ
-   ========================================= */
-
-const physSites = [
-  { id:"P1", name:"P1 — Ողջի ջրառ (ֆոնային)",
-    dates:["25.03.2025","22.04.2025","13.05.2025","17.06.2025","15.07.2025","12.08.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[31,31,31,31,31,31,31,31,31],
-      "Կախութային չոր նյութեր (բալ)":[12.5,36.1,16,6.3,8.8,10.8,9,17.7,3.2],
-      "pH":[8.05,7.64,7.57,7.54,7.736,8.2,7.88,8.058,7.993],
-      "Սուլֆատ իոն (մգ/լ)":[23.56,9.48,6.58,7.71,9.64,45.05,21.30,23.71,21.57],
-      "Քլորիդ իոն (մգ/լ)":[6.23,2.16,1.38,1.22,1.11,4.51,3.53,3.98,3.88],
-      "Նիտրատ իոն (մգ/լ)":[2.1888,2.419,1.5849,1.3139,0.495,0.33,0.535,0.653,1.321],
-      "ԹԿՊ5 (մգ/լ)":[2.34,2.67,2.57,1.89,1.81,1.51,2.46,3.4,4.14],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[314,140.9,83.2,82.6,119.4,402,227,257,261],
-      "Na (մգ/լ)":[17.38,4.78,2.18,2.30,3.68,23.23,9.12,13.55,16.72],
-      "Mg (մգ/լ)":[6.47,2.84,1.70,1.56,3.01,10.52,5.62,7.80,4.64],
-      "K (մգ/լ)":[1.64,1.09,0.92,0.48,0.68,2.02,1.46,3.02,1.27],
-      "Ca (մգ/լ)":[29.72,15.07,10.51,10.81,15.48,46.61,27.09,29.35,24.29],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[204,92,54,36.612,77.61,261.3,147.55,167.05,169.65]
-    }
-  },
-
-  { id:"P2", name:"P2 — Ողջի 2 (ազդեցությունից հետո)",
-    dates:["29.01.2025","25.03.2025","22.04.2025","13.05.2025","17.06.2025","15.07.2025","12.08.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[31,1,1,9,7,31,0,31,31,31],
-      "Կախութային չոր նյութեր (բալ)":[11.3,301.3,778,90.9,80.5,24.4,375.3,19.5,53.3,52.3],
-      "pH":[8.06,8.17,8.02,7.86,7.75,8.32,7.728,7.75,7.807,7.869],
-      "Սուլֆատ իոն (մգ/լ)":[316.55,222.78,325.30,60.56,36.46,321.66,321.53,341.22,260.80,318.22],
-      "Քլորիդ իոն (մգ/լ)":[32.60,33.79,42.59,4.91,2.74,27.86,30.34,27.46,22.86,29.83],
-      "Նիտրատ իոն (մգ/լ)":[12.56,7.22,11.27,3.13,3.13,11.33,4.30,12.26,16.54,20.48],
-      "ԹԿՊ5 (մգ/լ)":[5.04,1.66,2.12,2.01,1.64,1.22,2.26,3.36,4.39,3.05],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[876,1058,1197,307,213,914,944,883,825,1130],
-      "Na (մգ/լ)":[22.83,65.92,33.83,6.26,7.64,48.14,49.68,56.69,28.90,57.98],
-      "Mg (մգ/լ)":[45.054,25.077,45.219,7.163,6.004,36.358,40.848,32.702,41.691,33.242],
-      "K (մգ/լ)":[5.541,4.045,6.841,1.721,1.055,6.566,6.367,5.076,8.781,5.412],
-      "Ca (մգ/լ)":[110.32,89.37,146.72,30.12,21.55,112.29,100.34,92.11,89.26,111.83],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[569,688,778,199,57.969,594,613.6,573.95,536.25,734.5]
-    }
-  },
-
-  { id:"P3", name:"P3 — Բացահանքից եկող ջուր",
-    dates:["29.01.2025","25.03.2025","22.04.2025","13.05.2025","17.06.2025","15.07.2025","12.08.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[31,31,31,31,31,31,31,31,31,31],
-      "Կախութային չոր նյութեր (բալ)":[16.1,25.2,37.4,32.2,17.2,20,15.5,18.7,30.8,10.1],
-      "pH":[8.23,8.21,7.88,7.97,8.09,7.951,7.868,8.06,8.223,8.152],
-      "Սուլֆատ իոն (մգ/լ)":[1007.30,677.50,719.36,520.10,498.73,556.04,704.03,759.22,807.19,920.70],
-      "Քլորիդ իոն (մգ/լ)":[13.86,37.58,15.19,37.37,36.47,11.88,12.08,14.32,14.80,15.04],
-      "Նիտրատ իոն (մգ/լ)":[13.66,13.35,19.23,10.76,7.93,7.58,8.32,13.19,14.79,18.18],
-      "ԹԿՊ5 (մգ/լ)":[4.86,2.64,2.93,2.23,1.7,1.4,1.85,3.26,3.38,3.96],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[2322,2136,1984,1808,1804,1918,2028,2232,2246,2280],
-      "Na (մգ/լ)":[12.45,12.48,8.83,7.18,6.49,7.96,11.14,9.76,13.50,17.93],
-      "Mg (մգ/լ)":[159.68,108.46,100.51,92.48,93.34,97.24,112.33,128.56,147.84,117.51],
-      "K (մգ/լ)":[6.257,3.841,4.386,4.605,4.002,4.933,5.416,5.238,9.119,5.179],
-      "Ca (մգ/լ)":[314.25,208.08,205.30,178.17,183.67,167.52,197.15,223.14,250.03,262.29],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[1509,1388,1290,1176,347.814,1246,1318.2,1450.8,1459.9,1482]
-    }
-  },
-
-  { id:"P4", name:"P4 — Բացահանքի ջրերը խառնվելուց հետո",
-    dates:["29.01.2025","25.03.2025","22.04.2025","13.05.2025","17.06.2025","15.07.2025","12.08.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[31,31,31,31,31,31,31,31,31,31],
-      "Կախութային չոր նյութեր (բալ)":[13.8,22.4,42.1,31.7,10.1,14.9,9.2,14.5,29.2,3.2],
-      "pH":[8.12,8.21,7.97,7.68,7.735,8.009,8.057,8.0,8.154,8.095],
-      "Սուլֆատ իոն (մգ/լ)":[470.15,348.34,384.27,13.14,24.16,404.99,445.27,432.05,528.07,324.53],
-      "Քլորիդ իոն (մգ/լ)":[13.22,23.34,7.86,1.47,1.33,7.22,8.84,9.67,10.75,8.90],
-      "Նիտրատ իոն (մգ/լ)":[6.423,6.6672,9.583,2.0219,1.4568,3.194,4.403,4.974,6.929,5.73],
-      "ԹԿՊ5 (մգ/լ)":[3.74,2.99,2.55,2.02,1.54,1.56,1.82,3.03,6.7803904,4.25],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[1209,1215,1171,112,144,904,1312,958,5,938],
-      "Na (մգ/լ)":[17.59,18.25,9.96,2.41,2.15,10.59,16.50,15.02,0.38,21.50],
-      "Mg (մգ/լ)":[79.76,56.11,56.18,2.90,4.82,59.22,64.01,60.19,19.68,42.89],
-      "K (մգ/լ)":[5.206,3.624,3.247,0.926,0.573,3.624,4.944,3.861,null,3.236],
-      "Ca (մգ/լ)":[153.39,120.12,116.04,12.78,14.81,111.66,131.98,108.13,7.34,106.55],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[786,790,761,73,42.714,587,852.8,622.7,681.2,609.7]
-    }
-  },
-
-  { id:"P5", name:"P5 — Սպիտակ ջուր 2 լցակույտ",
-    dates:["29.01.2025","25.02.2025","25.03.2025","22.04.2025","13.05.2025","17.06.2025","15.07.2025","12.08.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[31,31,31,2,31,31,31,31,31,31,31],
-      "Կախութային չոր նյութեր (բալ)":[17,null,29.8,500.7,44.5,20.2,24.1,13.6,39.1,49.3,38.6],
-      "pH":[8.19,8.08,8.26,8.13,8.13,8.06,7.799,7.91,7.999,8.088,8.161],
-      "Սուլֆատ իոն (մգ/լ)":[1250.65,1216.87,563.21,252.00,201.37,508.94,588.76,837.57,1006.08,1078.94,1135.79],
-      "Քլորիդ իոն (մգ/լ)":[48.93,54.48,67.35,52.37,33.90,57.14,36.11,37.45,39.65,42.42,44.53],
-      "Նիտրատ իոն (մգ/լ)":[38.67,45.916,35.0225,16.42,8.5407,22.3663,13.042,18.293,37.284,49.764,56.404],
-      "ԹԿՊ5 (մգ/լ)":[4.3,3.21,2.68,2.2,2.12,1.58,1.58,1.56,2.87,3.55,4.58],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[2784,2708,1964,1049,1011,1942,2100,2454,2816,2752,2919],
-      "Na (մգ/լ)":[31.29,27.84,25.61,14.18,10.90,15.87,24.56,21.74,20.55,30.23,44.97],
-      "Mg (մգ/լ)":[187.74,179.71,98.26,50.54,46.60,95.49,115.44,120.76,135.12,189.52,156.68],
-      "K (մգ/լ)":[7.327,5.491,3.994,3.156,3.817,4.122,7.099,7.114,5.448,10.751,5.962],
-      "Ca (մգ/լ)":[318.69,297.26,178.50,107.33,96.82,177.10,217.02,252.49,266.41,273.75,303.68],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[1810,1760,1277,682,657,311.202,1366,1595.1,1830.4,1788.8,1897.35]
-    }
-  },
-
-  { id:"P6", name:"P6 — Ողջի՝ Սպիտակ ջուր խառնվելուց հետո",
-    dates:["29.01.2025","25.02.2025","25.03.2025","22.04.2025","17.06.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[3,4,0,2,8,31,31,8],
-      "Կախութային չոր նյութեր (բալ)":[49.5,70.4,3055,323.7,71.5,22.6,39.6,79],
-      "pH":[7.54,8.16,8.05,7.49,7.89,7.8,7.771,7.969],
-      "Սուլֆատ իոն (մգ/լ)":[275.39,264.28,225.17,334.57,67.74,344.15,260.42,292.97],
-      "Քլորիդ իոն (մգ/լ)":[29.46,37.07,42.99,27.82,5.06,27.94,22.95,29.49],
-      "Նիտրատ իոն (մգ/լ)":[0.372,0.529,5.411,0.345,4.1902,12.193,16.915,7.611],
-      "ԹԿՊ5 (մգ/լ)":[8.78,5.88,1.03,5.77,1.44,3.51,5.7,8.41],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[996,1094,867,1218,350,883,819,1359],
-      "Na (մգ/լ)":[30.11,36.73,66.47,47.67,9.51,56.64,27.00,77.44],
-      "Mg (մգ/լ)":[51.19,43.61,20.10,38.46,9.82,32.78,38.64,30.66],
-      "K (մգ/լ)":[7.357,6.166,4.089,6.877,1.636,5.082,8.179,7.183],
-      "Ca (մգ/լ)":[109.99,103.40,77.57,122.93,36.23,92.27,84.12,115.05],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[647,711,564,792,91.53,573.95,532.35,883.35]
-    }
-  },
-
-  { id:"P7", name:"P7 — Դարազամ/Ձորատեղ",
-    dates:["29.01.2025","25.02.2025","25.03.2025","22.04.2025","13.05.2025","17.06.2025","15.07.2025","12.08.2025","16.09.2025","14.10.2025","18.11.2025"],
-    data:{
-      "Թափանցիկություն (աստիճան)":[31,3,31,4,31,31,31,31,31,31,31],
-      "Կախութային չոր նյութեր (բալ)":[34.9,520.9,37.2,247.2,33,31.7,33.4,21.8,43.3,45.1,17.1],
-      "pH":[8.18,8.09,8.22,8.07,8.04,8.06,7.987,7.998,8.017,8.105,8.096],
-      "Սուլֆատ իոն (մգ/լ)":[1463.16,1410.75,815.97,538.89,495.10,723.14,885.74,1093.59,940.38,1130.79,1398.69],
-      "Քլորիդ իոն (մգ/լ)":[45.98,42.72,61.56,52.88,64.72,61.22,42.38,42.73,37.64,44.31,46.25],
-      "Նիտրատ իոն (մգ/լ)":[70.70,80.04,69.27,37.66,38.03,56.38,47.16,60.59,34.51,52.40,116.24],
-      "ԹԿՊ5 (մգ/լ)":[3.33,3.34,3.09,2.44,2.26,2.08,1.62,2.21,3.31,3.11,4.41],
-      "Տեսակարար էլեկտրահաղորդականություն (µS/cm)":[3048,2966,2810,1617,2006,2496,2806,2978,2834,2716,3396],
-      "Na (մգ/լ)":[22.96,25.55,26.64,17.84,17.16,16.81,18.50,22.25,20.29,31.36,42.08],
-      "Mg (մգ/լ)":[214.58,205.27,107.46,80.31,91.75,123.26,159.53,157.96,155.21,207.91,174.76],
-      "K (մգ/լ)":[8.324,6.715,4.757,4.580,5.467,5.645,5.777,8.734,5.965,11.764,6.888],
-      "Ca (մգ/լ)":[391.96,349.58,234.39,167.21,184.16,258.22,208.34,314.15,265.43,301.40,359.34],
-      "ԸԼՆ / Հանքայնացում (մգ/լ)":[1981,1928,1827,1051,1304,305.1,1824,1935.7,1842.1,1765.4,2207.4]
-    }
-  }
-];
-
-function normalizePhysValue(v){
-  if(v === null || v === undefined) return null;
-  if(typeof v === "number") return v;
-  const s = String(v).trim();
-  if(!s) return null;
-  const num = Number(s.replace(",", "."));
-  return Number.isFinite(num) ? num : null;
-}
-
-function getPhysParams(site){ return Object.keys(site.data); }
-
-const siteSelect = document.getElementById("siteSelect");
-const paramSelect = document.getElementById("paramSelect");
-let physChartObj = null;
-
-function initPhysUI(){
-  if(!siteSelect || !paramSelect) return;
-
-  siteSelect.innerHTML = "";
-  physSites.forEach(s=>{
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = s.name;
-    siteSelect.appendChild(opt);
-  });
-  siteSelect.value = "P1";
-
-  refreshPhysParams();
-  applyPhysCanvasSize();
-  renderPhysChart();
-  renderPhysSummary();
-}
-
-function refreshPhysParams(){
-  const site = physSites.find(x=>x.id===siteSelect.value) || physSites[0];
-  const params = getPhysParams(site);
-
-  paramSelect.innerHTML = "";
-  params.forEach(p=>{
-    const opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p;
-    paramSelect.appendChild(opt);
-  });
-
-  if(params.includes("pH")) paramSelect.value = "pH";
-}
-
-function applyPhysCanvasSize(){
-  const size = document.getElementById("physSizeSelect")?.value || "small";
-  const dims = (size==="medium") ? {w:720,h:380} : {w:520,h:340};
-  const c = document.getElementById("physChart");
-  if(c){ c.width = dims.w; c.height = dims.h; }
-}
-
-function renderPhysChart(){
-  const site = physSites.find(x=>x.id===siteSelect.value) || physSites[0];
-  const param = paramSelect.value;
-  const labels = site.dates;
-  const raw = site.data[param] || [];
-  const values = raw.map(normalizePhysValue);
-
-  const ctx = document.getElementById("physChart").getContext("2d");
-  if(physChartObj) physChartObj.destroy();
-
-  physChartObj = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [{ label: `${site.name} — ${param}`, data: values, tension: 0.25 }]
-    },
-    options: { responsive:false, plugins:{legend:{display:true}} }
-  });
-}
-
-function renderPhysSummary(){
-  const site = physSites.find(x=>x.id===siteSelect.value) || physSites[0];
-  const param = paramSelect.value;
-
-  const arr = (site.data[param] || []).map(normalizePhysValue).filter(x=>Number.isFinite(x));
-  const avg = average(arr);
-  const min = (arr.length? Math.min(...arr): null);
-  const max = (arr.length? Math.max(...arr): null);
-
-  const unit =
-    param.includes("µS") ? "µS/cm" :
-    (param.includes("մգ/լ") ? "մգ/լ" :
-    (param.includes("աստիճան") ? "աստիճան" :
-    (param.includes("բալ") ? "բալ" : "")));
-
-  const box = document.getElementById("physSummary");
-  if(!box) return;
-
-  box.innerHTML = `
-    <p><b>${site.name}</b> կետում <b>${param}</b> ցուցիչի համար հաշվարկվել է՝</p>
-    <ul>
-      <li>Միջին՝ <b>${fmt(avg)}</b> ${unit}</li>
-      <li>Մինիմում՝ <b>${fmt(min)}</b> ${unit}</li>
-      <li>Մաքսիմում՝ <b>${fmt(max)}</b> ${unit}</li>
-    </ul>
-    <p class="small">null/բացակայող արժեքները չեն մտնում միջինի հաշվարկի մեջ։</p>
-  `;
-}
-
-function hookPhysEvents(){
-  document.getElementById("physRefreshBtn")?.addEventListener("click", ()=>{
-    refreshPhysParams();
-    applyPhysCanvasSize();
-    renderPhysChart();
-    renderPhysSummary();
-  });
-
-  siteSelect?.addEventListener("change", ()=>{
-    refreshPhysParams();
-    applyPhysCanvasSize();
-    renderPhysChart();
-    renderPhysSummary();
-  });
-
-  paramSelect?.addEventListener("change", ()=>{
-    renderPhysChart();
-    renderPhysSummary();
-  });
-
-  document.getElementById("physSizeSelect")?.addEventListener("change", ()=>{
-    applyPhysCanvasSize();
-    renderPhysChart();
-  });
-}
-
-/* =========================================
-   9) ՄԵԿՆԱՐԿ
+   8) ՄԵԿՆԱՐԿ
    ========================================= */
 
 renderMetalsTable();
+renderPhysTable();
 applyCanvasSize();
 renderCharts();
+renderPhysPersist();
 
 metalSelect.addEventListener("change", ()=>renderCharts());
+physSelect.addEventListener("change", ()=>renderPhysPersist());
 document.getElementById("sizeSelect").addEventListener("change", ()=>{
   applyCanvasSize();
   renderCharts();
+  renderPhysPersist();
 });
-document.getElementById("recalcBtn").addEventListener("click", ()=>renderCharts());
-
-// ✅ ֆիզիկաքիմիական բաժնի մեկնարկ
-initPhysUI();
-hookPhysEvents();
+document.getElementById("recalcBtn").addEventListener("click", ()=>{
+  renderCharts();
+  renderPhysPersist();
+});
 </script>
 
 </body>
 </html>
-

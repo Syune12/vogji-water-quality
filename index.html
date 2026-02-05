@@ -2,791 +2,498 @@
 <html lang="hy">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ողջի գետի ջրի որակի մոնիթորինգ — ԶՊՄԿ ազդեցության գոտի</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Ողջի գետի ջրի որակ․ Ֆոնային vs Վերջնակետ (պահպանման գրաֆիկ)</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 
   <style>
-    body{font-family:Arial, sans-serif;background:#f4f6f8;margin:0;color:#222}
-    header{background:#0b7285;color:#fff;padding:18px 16px}
-    header h1{margin:0;font-size:20px}
-    header p{margin:6px 0 0;opacity:.95;max-width:1100px;line-height:1.5}
-    main{max-width:1200px;margin:0 auto;padding:14px}
-    section{background:#fff;border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-    h2{margin:0 0 10px;color:#0b7285;font-size:18px}
-    h3{margin:12px 0 8px;font-size:15px}
-    #map{height:360px;border-radius:10px}
-    .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
-    .col{flex:1;min-width:320px}
-    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
-    select, button{padding:7px 10px;border-radius:10px;border:1px solid #cfd4da;background:#fff}
-    .hint{font-size:13px;opacity:.9;line-height:1.55;max-width:1100px}
-    .tag{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;margin-right:6px;border:1px solid #ddd;background:#fafafa}
-    .legendBox{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
-    canvas{border:1px solid #e9ecef;border-radius:10px;background:#fff}
-    .small{font-size:12px;opacity:.85}
-    .tableWrap{overflow:auto;border:1px solid #e9ecef;border-radius:10px}
-    table{border-collapse:collapse;min-width:980px;width:100%}
-    th,td{border:1px solid #e9ecef;padding:7px 8px;text-align:left;font-size:12px}
-    th{position:sticky;top:0;background:#f6f7f9;z-index:1}
-    footer{text-align:center;padding:16px;color:#666;font-size:12px}
-    .hr{height:1px;background:#e9ecef;margin:10px 0}
+    :root{
+      --bg:#f4f6f8; --card:#fff; --ink:#1f2937; --muted:#6b7280; --accent:#0b7285;
+      --border:#e5e7eb;
+    }
+    body{margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--bg); color:var(--ink);}
+    header{background:var(--accent); color:#fff; padding:18px 16px;}
+    header h1{margin:0; font-size:20px; line-height:1.2}
+    header p{margin:6px 0 0; opacity:.9; font-size:13px}
+
+    .wrap{max-width:1200px; margin:0 auto; padding:14px;}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin:12px 0;}
+    .card h2{margin:0 0 10px; color:var(--accent); font-size:16px}
+    .sub{color:var(--muted); font-size:13px; margin-top:-4px; margin-bottom:12px; line-height:1.5}
+
+    .grid{display:grid; grid-template-columns: 1.1fr 1.9fr; gap:12px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+
+    .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:end;}
+    .ctrl{display:flex; flex-direction:column; gap:6px;}
+    label{font-size:12px; color:var(--muted);}
+    select, button{
+      border:1px solid var(--border); border-radius:10px; padding:10px 10px; font-size:14px; background:#fff;
+    }
+    button{cursor:pointer; background:var(--accent); color:#fff; border-color:transparent;}
+    button:hover{filter:brightness(0.95);}
+
+    .kpi{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    .kpi .box{border:1px dashed var(--border); border-radius:12px; padding:10px;}
+    .kpi .t{font-size:12px; color:var(--muted);}
+    .kpi .v{font-size:16px; font-weight:700; margin-top:6px;}
+
+    .note{font-size:12px; color:var(--muted); line-height:1.5;}
+    footer{padding:14px; text-align:center; color:var(--muted); font-size:12px;}
+    canvas{max-height:420px;}
+    .legendHint{font-size:12px; color:var(--muted); margin-top:8px;}
   </style>
 </head>
 
 <body>
-<header>
-  <h1>Ողջի գետի ջրի որակի մոնիթորինգ — ԶՊՄԿ ազդեցության գոտու վերլուծություն</h1>
-  <p>
-    Կայքում ավելացված են մոնիթորինգի 7 կետ (ֆոնային, ազդեցության աղբյուրներ և խառնվելուց հետո կետեր)։
-    Այստեղ կարող եք դիտել ծանր մետաղների ժամանակային փոփոխությունները, աղբյուրների հարաբերական ազդեցությունը,
-    ազդեցության գոտուց հետո աղտոտվածության պահպանման/նվազման միտումը, ինչպես նաև՝ ֆիզիկաքիմիական ու աղային ցուցիչների
-    «ֆոնային vs վերջնակետ» պահպանման գրաֆիկները։
-  </p>
-</header>
+  <header>
+    <h1>Պահպանման գրաֆիկ՝ ազդեցության գոտուց հետո (Ֆոնային vs Վերջնակետ)</h1>
+    <p>Ֆիզիկաքիմիական և աղային ցուցիչներ․ համեմատվում են «Ողջի ջրառ (Ֆոնային)» և «Դարազամ/Ձորատեղ (վերջնակետ)» կետերը</p>
+  </header>
 
-<main>
-  <section>
-    <h2>Քարտեզ — մոնիթորինգի կետեր և ազդեցության աղբյուրներ</h2>
-    <div class="hint">
-      <span class="tag">Ֆոնային (1)</span>
-      <span class="tag">Աղբյուր/արտահոսք (2,4,6)</span>
-      <span class="tag">Խառնվելուց հետո (3,5)</span>
-      <span class="tag">ԶՊՄԿ ազդեցությունից հետո (7)</span>
-      • Սեղմեք կետերի վրա՝ տվյալները տեսնելու համար։
-    </div>
-    <div id="map"></div>
-
-    <div class="legendBox small">
-      <span><span class="dot" style="background:#2f9e44"></span>Ֆոնային կետ</span>
-      <span><span class="dot" style="background:#f08c00"></span>Աղբյուր/արտահոսք</span>
-      <span><span class="dot" style="background:#1971c2"></span>Խառնվելուց հետո (գետի կետ)</span>
-      <span><span class="dot" style="background:#e03131"></span>ԶՊՄԿ ազդեցությունից հետո</span>
-    </div>
-  </section>
-
-  <section>
-    <h2>Ծանր մետաղների գրաֆիկական վերլուծություն</h2>
-
-    <div class="controls">
-      <label class="small">Ընտրեք մետաղը՝</label>
-      <select id="metalSelect"></select>
-
-      <label class="small">Գրաֆիկների չափս՝</label>
-      <select id="sizeSelect">
-        <option value="small" selected>Փոքր (420×300)</option>
-        <option value="medium">Միջին (520×340)</option>
-      </select>
-
-      <button id="recalcBtn" type="button">Թարմացնել հաշվարկները</button>
+  <div class="wrap">
+    <div class="card">
+      <h2>Ինչ է ցույց տալիս այս գրաֆիկը</h2>
+      <div class="sub">
+        Ընտրիր ցուցիչը, և գրաֆիկը կցուցադրի ժամանակային փոփոխությունը՝ <b>ֆոնային</b> կետի և <b>վերջնակետի</b> համար նույն օրերի վրա։
+        Սա կարելի է օգտագործել հասկանալու համար՝ ազդեցության գոտուց հետո տվյալ ցուցիչը «վերականգնվում/պահպանվում» է դեպի ֆոնային մակարդակ, թե մնում է բարձր/ցածր։
+      </div>
+      <div class="note">
+        * «&lt;x» արժեքները գրաֆիկում հաշվարկվում են որպես x/2 (միայն տեսանելիության համար) և tooltip-ում նշվում է, որ դա «մակարդակից ցածր» է։
+      </div>
     </div>
 
-    <div class="row">
-      <div class="col">
-        <h3>Ժամանակային փոփոխություն (բոլոր կետերով)</h3>
-        <canvas id="tsChart" width="420" height="300"></canvas>
-        <div class="small">Նշում․ «&lt;…» արժեքները հաշվարկներում ընդունվել են որպես սահմանաչափի կեսը։</div>
+    <div class="card">
+      <h2>Պահպանման գրաֆիկ (Ֆոնային vs Վերջնակետ)</h2>
+
+      <div class="controls">
+        <div class="ctrl">
+          <label for="category">Խումբ</label>
+          <select id="category"></select>
+        </div>
+
+        <div class="ctrl">
+          <label for="indicator">Ցուցիչ</label>
+          <select id="indicator"></select>
+        </div>
+
+        <div class="ctrl">
+          <label for="mode">Տեսք</label>
+          <select id="mode">
+            <option value="line">Ժամանակային գիծ</option>
+            <option value="ratio">Վերջնակետ / Ֆոնային (հարաբերակցություն)</option>
+          </select>
+        </div>
+
+        <button id="btnUpdate">Թարմացնել</button>
       </div>
 
-      <div class="col">
-        <h3>Աղբյուրների հարաբերական ներդրում (միջին աճի հիման վրա)</h3>
-        <canvas id="srcPctChart" width="420" height="300"></canvas>
-        <div class="small">
-          Այս %-երը հաշվվում են «ֆոնային → (բացահանքից հետո) → (Սպիտակ ջրից հետո) → (ԶՊՄԿ ազդեցությունից հետո)»
-          շղթայում՝ տվյալ մետաղի միջին աճերի համեմատությամբ։
+      <div class="grid" style="margin-top:12px;">
+        <div>
+          <div class="kpi">
+            <div class="box">
+              <div class="t">Վերջին համընկնող օր (ֆոնային)</div>
+              <div class="v" id="kpiBg">—</div>
+            </div>
+            <div class="box">
+              <div class="t">Վերջին համընկնող օր (վերջնակետ)</div>
+              <div class="v" id="kpiEnd">—</div>
+            </div>
+            <div class="box">
+              <div class="t">Տարբերություն (վերջնակետ − ֆոնային)</div>
+              <div class="v" id="kpiDiff">—</div>
+            </div>
+            <div class="box">
+              <div class="t">Հարաբերակցություն (վերջնակետ / ֆոնային)</div>
+              <div class="v" id="kpiRatio">—</div>
+            </div>
+          </div>
+
+          <div class="legendHint">
+            Հուշում․ «Վերջնակետ/Ֆոնային» &gt; 1 ⇒ վերջնակետում բարձր է, &lt; 1 ⇒ վերջնակետում ցածր է։
+          </div>
+        </div>
+
+        <div>
+          <canvas id="chart"></canvas>
         </div>
       </div>
     </div>
 
-    <div class="row" style="margin-top:10px">
-      <div class="col">
-        <h3>Ազդեցության գոտուց հետո պահպանման գրաֆիկ (ֆոնային vs վերջնակետ) — Մետաղներ</h3>
-        <canvas id="persistChart" width="420" height="300"></canvas>
-      </div>
-
-      <div class="col">
-        <h3>Ամփոփ տեքստային վերլուծություն և եզրակացություն</h3>
-        <div id="summaryText" class="hint"></div>
-      </div>
-    </div>
-
-    <div class="hr"></div>
-
-    <h3>Ֆիզիկաքիմիական և աղային ցուցիչներ — պահպանման գրաֆիկ (ֆոնային vs վերջնակետ)</h3>
-
-    <div class="controls">
-      <label class="small">Ընտրեք ցուցիչը՝</label>
-      <select id="physSelect"></select>
-      <span class="small">• Նույն տրամաբանությամբ՝ P1 (ֆոնային) vs P7 (վերջնակետ)</span>
-    </div>
-
-    <div class="row">
-      <div class="col">
-        <canvas id="physPersistChart" width="420" height="300"></canvas>
-        <div class="small">
-          Եթե գրաֆիկը դատարկ է՝ նշանակում է տվյալ ցուցիչի թվերը դեռ չեն լրացվել <b>physchemData</b> բլոկում (ստորև՝ կոդում)։
-        </div>
-      </div>
-      <div class="col">
-        <div id="physSummaryText" class="hint"></div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Տվյալների ամփոփ աղյուսակ (մետաղներ)</h2>
-    <div class="hint">
-      Ցուցադրվում են միայն մետաղները/ծանր մետաղները, որոնք օգտագործվում են կայքի գրաֆիկներում։
-    </div>
-    <div class="tableWrap" id="tableWrap"></div>
-  </section>
-
-  <section>
-    <h2>Տվյալների ամփոփ աղյուսակ (ֆիզիկաքիմիական և աղային ցուցիչներ)</h2>
-    <div class="hint">
-      Այս աղյուսակը լցվում է <b>physchemData</b> տվյալներից։ Եթե դեռ չես լրացրել, այստեղ շատ «—» կլինի։
-    </div>
-    <div class="tableWrap" id="physTableWrap"></div>
-  </section>
-</main>
-
-<footer>
-  © Ողջի գետի մոնիթորինգ — տվյալների հիման վրա ավտոմատ վերլուծություն
-</footer>
+    <footer>
+      Տվյալների աղբյուր՝ քո տրամադրած աղյուսակները (2025թ.) • Էջը ամբողջությամբ offline է (միայն Chart.js CDN)
+    </footer>
+  </div>
 
 <script>
-/* =========================
-   1) ՕԳՆԱԿԱՆ ՖՈՒՆԿՑԻԱՆԵՐ
-   ========================= */
+/** ========= Utils ========= **/
+function parseValue(raw){
+  if(raw === null || raw === undefined) return {val:null, raw:null, isBelow:false};
+  const s = String(raw).trim();
+  if(s === "" || s === "-" ) return {val:null, raw:s, isBelow:false};
 
-function parseValue(v){
-  if(v === null || v === undefined) return null;
-  if(typeof v === "number") return v;
-  const s = String(v).trim();
-  if(!s) return null;
-  if(s.startsWith("<")){
-    const num = Number(s.slice(1));
-    return Number.isFinite(num) ? num/2 : null;
+  // Normalize comma decimals if any
+  const ss = s.replace(",", ".");
+
+  if(ss.startsWith("<")){
+    const num = Number(ss.replace("<","").trim());
+    if(Number.isFinite(num)) return {val: num/2, raw:s, isBelow:true};
+    return {val:null, raw:s, isBelow:true};
   }
-  const num = Number(s);
-  return Number.isFinite(num) ? num : null;
+  const num = Number(ss);
+  if(Number.isFinite(num)) return {val:num, raw:s, isBelow:false};
+  return {val:null, raw:s, isBelow:false};
 }
 
-function fmt(v){
-  if(v === null || v === undefined) return "—";
-  if(!Number.isFinite(v)) return "—";
-  if(v === 0) return "0";
-  if(Math.abs(v) < 0.0001) return v.toExponential(2);
-  return (Math.abs(v) < 1) ? v.toFixed(4) : v.toFixed(3);
+function formatMaybe(val){
+  if(val === null || val === undefined || !Number.isFinite(val)) return "—";
+  // avoid too many decimals
+  const abs = Math.abs(val);
+  if(abs >= 100) return val.toFixed(1);
+  if(abs >= 10) return val.toFixed(2);
+  if(abs >= 1) return val.toFixed(3);
+  return val.toFixed(4);
 }
-
-function uniq(arr){ return [...new Set(arr)]; }
 
 function sortDates(dates){
-  const toKey = (d)=>{
-    const [dd,mm,yy] = d.split(".").map(Number);
-    return yy*10000 + mm*100 + dd;
-  };
-  return [...dates].sort((a,b)=>toKey(a)-toKey(b));
-}
-
-function average(arr){
-  const xs = arr.filter(x=>Number.isFinite(x));
-  if(xs.length===0) return null;
-  return xs.reduce((a,b)=>a+b,0)/xs.length;
-}
-
-/* =========================================
-   2) ԿԵՏԵՐ, ԿՈՈՐԴԻՆԱՏՆԵՐ, ՑՈՒՑԻՉՆԵՐ
-   ========================================= */
-
-const pointsMeta = [
-  {id:"P1", name:"1) Ողջի ջրառ (ֆոնային)", type:"background", lat:39.1573222222, lon:46.1168277778},
-  {id:"P2", name:"2) Բացահանքից եկող ջուր (աղբյուր)", type:"source", lat:39.1560833333, lon:46.1279277778},
-  {id:"P3", name:"3) Ողջի՝ բացահանքի ջրից հետո", type:"mix", lat:39.1564638889, lon:46.1296472222},
-  {id:"P4", name:"4) Սպիտակ ջուր (աղբյուր)", type:"source", lat:39.1465472222, lon:46.1556027778},
-  {id:"P5", name:"5) Ողջի՝ Սպիտակ ջրից հետո", type:"mix", lat:39.1496333333, lon:46.1597611111},
-  {id:"P6", name:"6) Դարազամ/Ձորատեղ (աղբյուր)", type:"source", lat:39.1466861111, lon:46.1703861111},
-  {id:"P7", name:"7) Ողջի 2 (ԶՊՄԿ ազդեցությունից հետո)", type:"downstream", lat:39.1513111111, lon:46.1861027778},
-];
-
-const typeStyle = {
-  background: {color:"#2f9e44", radius:7},
-  source:     {color:"#f08c00", radius:7},
-  mix:        {color:"#1971c2", radius:7},
-  downstream: {color:"#e03131", radius:8}
-};
-
-// Մետաղներ
-const METALS = ["Al","V","Cr","Fe","Mn","Co","Ni","Cu","Zn","As","Se","Mo","Cd","Pb"];
-
-// Ֆիզիկաքիմիական + աղային ցուցիչների ցուցակ
-// units: ավելացվում է displayUnits-ում
-const PHYS = ["pH","EC","TDS","TSS","Turbidity","Hardness","Alkalinity","Cl","SO4","NO3","NH4","Na","K","Ca","Mg","HCO3"];
-
-const displayUnits = {
-  pH: "",
-  EC: "µS/cm",
-  TDS: "mg/L",
-  TSS: "mg/L",
-  Turbidity: "NTU",
-  Hardness: "mg/L (as CaCO3)",
-  Alkalinity: "mg/L (as CaCO3)",
-  Cl: "mg/L",
-  SO4: "mg/L",
-  NO3: "mg/L",
-  NH4: "mg/L",
-  Na: "mg/L",
-  K: "mg/L",
-  Ca: "mg/L",
-  Mg: "mg/L",
-  HCO3: "mg/L"
-};
-
-/* ===================================================
-   3) ՄԵՏԱՂՆԵՐԻ ՏՎՅԱԼՆԵՐ (ՔՈ ՏՎԱԾ ԹՎԵՐԸ)
-   =================================================== */
-
-const data = {
-  P1: {
-    "25.03.2025": {Al:"<0.01",V:0.0002042,Cr:0.0002764,Fe:0.146,Mn:0.0020,Co:"<0.0001",Ni:0.0015192,Cu:0.00225,Zn:0.00243,As:0.0014,Se:0.0002681,Mo:0.004,Cd:"<0.0001",Pb:"<0.0001"},
-    "22.04.2025": {Al:0.0122133,V:0.0001836,Cr:0.0002935,Fe:0.073,Mn:0.0050,Co:"<0.0001",Ni:0.0009484,Cu:0.00466,Zn:0.00251,As:0.0008,Se:0.0002148,Mo:0.003,Cd:"<0.0001",Pb:"<0.0001"},
-    "13.05.2025": {Al:0.0254645,V:0.0002377,Cr:0.0002572,Fe:0.073,Mn:0.0057,Co:"<0.0001",Ni:0.0008742,Cu:0.00581,Zn:0.00395,As:0.0004,Se:0.0004615,Mo:0.008,Cd:"<0.0001",Pb:"<0.0001"},
-    "17.06.2025": {Al:"<0.01",V:0.0002535,Cr:0.0005014,Fe:0.047,Mn:0.0039,Co:"<0.001",Ni:0.0008589,Cu:0.00213,Zn:0.00626,As:0.0003,Se:0.0005992,Mo:0.003,Cd:"<0.0001",Pb:0.0001107},
-    "15.07.2025": {Al:0.011627,V:0.0001467,Cr:0.0002518,Fe:0.074,Mn:0.0037,Co:"<0.0001",Ni:0.0008408,Cu:0.00275,Zn:0.00764,As:0.0005,Se:0.0016064,Mo:0.006,Cd:"<0.0001",Pb:"<0.0001"},
-    "12.08.2025": {Al:0.0321142,V:0.0009373,Cr:0.0081719,Fe:0.314,Mn:0.0561,Co:0.000268,Ni:0.0029055,Cu:0.00307,Zn:0.00451,As:0.0024,Se:0.0001846,Mo:0.015,Cd:"<0.0001",Pb:0.0001025},
-    "16.09.2025": {Al:0.025187232,V:0.000241584,Cr:0.007264096,Fe:0.160,Mn:0.0015,Co:"<0.0001",Ni:0.004940992,Cu:0.00252,Zn:0.00546,As:0.0015,Se:0.000135744,Mo:0.006,Cd:"<0.0001",Pb:"<0.0001"},
-    "14.10.2025": {Al:0.0195022,V:0.0004161,Cr:0.0021,Fe:0.279,Mn:0.0036,Co:0.0001592,Ni:0.0056488,Cu:0.00325,Zn:0.00497,As:0.0027,Se:0.0005144,Mo:0.007,Cd:0.00030,Pb:0.0001109},
-    "18.11.2025": {Al:"<0.01",V:0.0002097,Cr:0.0035816,Fe:0.168,Mn:0.0034,Co:0.0001322,Ni:0.0041738,Cu:0.00185,Zn:0.00232,As:0.0017,Se:0.0003678,Mo:0.007,Cd:"<0.0001",Pb:"<0.0001"},
-  },
-  P2: {
-    "29.01.2025": {Al:"<0.01",V:0.000537,Cr:0.00142,Fe:1.599,Mn:0.00369,Co:0.000638,Ni:0.0111,Cu:0.205,Zn:0.0281,As:0.00278,Se:0.239,Mo:0.679,Cd:0.0023895,Pb:0.0001515},
-    "25.03.2025": {Al:"<0.01",V:0.000395,Cr:"<0.0001",Fe:1.041,Mn:0.00170,Co:0.000399,Ni:0.0101,Cu:0.226,Zn:0.0331,As:0.00240,Se:0.175,Mo:0.482,Cd:0.002407,Pb:"<0.0001"},
-    "22.04.2025": {Al:"<0.01",V:0.000365,Cr:0.00057,Fe:0.941,Mn:0.00288,Co:0.0003704,Ni:0.0087,Cu:0.198,Zn:0.0336,As:0.00258,Se:0.142,Mo:0.680,Cd:0.0030752,Pb:"<0.0001"},
-    "13.05.2025": {Al:"<0.01",V:0.000442,Cr:0.00067,Fe:1.196,Mn:0.00316,Co:0.0004416,Ni:0.0098,Cu:0.265,Zn:0.0491,As:0.00336,Se:0.188,Mo:0.701,Cd:0.0031068,Pb:"<0.0001"},
-    "17.06.2025": {Al:"<0.01",V:0.000426,Cr:0.00049,Fe:1.126,Mn:0.00270,Co:0.0005264,Ni:0.0130,Cu:0.183,Zn:0.0309,As:0.00230,Se:0.134,Mo:0.710,Cd:0.0031148,Pb:0.0003544},
-    "15.07.2025": {Al:"<0.01",V:0.000279,Cr:0.00034,Fe:0.962,Mn:0.00243,Co:0.0004624,Ni:0.0090,Cu:0.181,Zn:0.0468,As:0.00269,Se:0.136,Mo:0.667,Cd:0.0025272,Pb:0.000202},
-    "12.08.2025": {Al:0.016618,V:0.000488,Cr:0.00694,Fe:1.132,Mn:0.00196,Co:0.0005195,Ni:0.0114,Cu:0.161,Zn:0.0225,As:0.00256,Se:0.156,Mo:0.615,Cd:0.002599,Pb:"<0.0001"},
-    "16.09.2025": {Al:0.0307384,V:0.000492,Cr:0.00690,Fe:1.462,Mn:0.00211,Co:0.0005929,Ni:0.0172,Cu:0.224,Zn:0.0392,As:0.00286,Se:0.198,Mo:0.573,Cd:0.00256135,Pb:0.00010945},
-    "14.10.2025": {Al:"<0.01",V:0.000739,Cr:0.00198,Fe:2.293,Mn:0.00257,Co:0.0011525,Ni:0.0454,Cu:0.339,Zn:0.0535,As:0.00358,Se:0.256,Mo:0.695,Cd:0.003772,Pb:"<0.0001"},
-    "18.11.2025": {Al:0.0171305,V:0.000590,Cr:0.00288,Fe:1.255,Mn:0.00312,Co:0.0008245,Ni:0.0305,Cu:0.259,Zn:0.0481,As:0.00265,Se:0.218,Mo:0.580,Cd:0.0037,Pb:0.000206},
-  },
-  P3: {
-    "29.01.2025": {Al:"<0.01",V:0.000613,Cr:0.00102,Fe:0.746,Mn:0.00171,Co:0.0002706,Ni:0.00524,Cu:0.0573,Zn:0.0280,As:0.00267,Se:0.0908,Mo:0.503,Cd:0.00167,Pb:0.0003006},
-    "25.03.2025": {Al:"<0.01",V:0.000580,Cr:0.00011,Fe:0.633,Mn:0.00157,Co:0.0002577,Ni:0.00534,Cu:0.0716,Zn:0.0147,As:0.00237,Se:0.0842,Mo:0.466,Cd:0.00202,Pb:"<0.0001"},
-    "22.04.2025": {Al:"<0.01",V:0.000402,Cr:0.00032,Fe:0.543,Mn:0.00179,Co:0.0002205,Ni:0.00478,Cu:0.0820,Zn:0.0142,As:0.00201,Se:0.0751,Mo:0.479,Cd:0.00201,Pb:"<0.0001"},
-    "13.05.2025": {Al:0.0200181,V:0.000243,Cr:0.00040,Fe:0.087,Mn:0.00528,Co:"<0.0001",Ni:0.00100,Cu:0.0079,Zn:0.0091,As:0.00043,Se:0.0025,Mo:0.021,Cd:0.00011,Pb:"<0.0001"},
-    "17.06.2025": {Al:"<0.01",V:0.000184,Cr:0.00023,Fe:0.088,Mn:0.00486,Co:"<0.001",Ni:0.00140,Cu:0.0066,Zn:0.0051,As:0.00039,Se:0.0040,Mo:0.027,Cd:0.00014,Pb:0.0001023},
-    "15.07.2025": {Al:0.0633636,V:0.001260,Cr:0.00032,Fe:0.628,Mn:0.00793,Co:0.0002529,Ni:0.00530,Cu:0.0536,Zn:0.0377,As:0.00212,Se:0.0506,Mo:0.355,Cd:0.00141,Pb:0.0003201},
-    "12.08.2025": {Al:0.019878,V:0.000690,Cr:0.00684,Fe:0.771,Mn:0.00219,Co:0.0003711,Ni:0.00783,Cu:0.0674,Zn:0.0128,As:0.00234,Se:0.0910,Mo:0.544,Cd:0.00214,Pb:"<0.0001"},
-    "16.09.2025": {Al:0.0265896,V:0.000648,Cr:0.00702,Fe:0.641,Mn:0.00240,Co:0.000266,Ni:0.00651,Cu:0.0469,Zn:0.0263,As:0.00228,Se:0.0631,Mo:0.297,Cd:0.00141,Pb:"<0.0001"},
-    "14.10.2025": {Al:73.9596382,V:0.002654,Cr:0.00114,Fe:0.001,Mn:1.14888,Co:0.0046161,Ni:0.00060,Cu:0.0188,Zn:0.0758,As:0.08763,Se:0.0033,Mo:0.564,Cd:0.45435,Pb:0.0278841},
-    "18.11.2025": {Al:0.0105066,V:0.000499,Cr:0.00368,Fe:0.473,Mn:0.00109,Co:0.0003418,Ni:0.01175,Cu:0.0498,Zn:0.0122,As:0.00209,Se:0.0651,Mo:0.291,Cd:0.00182,Pb:0.000163},
-  },
-  P4: {
-    "29.01.2025": {Al:0.1090,V:0.00103,Cr:0.00266,Fe:1.986,Mn:0.0148,Co:0.001075,Ni:0.00805,Cu:0.0278,Zn:0.0578,As:0.00369,Se:0.180,Mo:0.658,Cd:0.00204,Pb:0.00727},
-    "25.02.2025": {Al:0.0003,V:0.00077,Cr:"<0.0001",Fe:1.441,Mn:0.0018,Co:0.0005255,Ni:0.00543,Cu:0.0210,Zn:0.0076,As:0.00321,Se:0.169,Mo:0.590,Cd:0.00188,Pb:"<0.0001"},
-    "25.03.2025": {Al:"<0.01",V:0.00077,Cr:0.00101,Fe:0.988,Mn:0.0018,Co:0.0003645,Ni:0.00639,Cu:0.0454,Zn:0.0066,As:0.00288,Se:0.107,Mo:0.510,Cd:0.00237,Pb:"<0.0001"},
-    "22.04.2025": {Al:"<0.01",V:0.00067,Cr:0.00124,Fe:0.537,Mn:0.0069,Co:0.000267,Ni:0.00369,Cu:0.0415,Zn:0.0235,As:0.00242,Se:0.048,Mo:0.351,Cd:0.00143,Pb:0.00012},
-    "13.05.2025": {Al:"<0.01",V:0.00060,Cr:0.00117,Fe:0.631,Mn:0.0061,Co:0.0002868,Ni:0.00482,Cu:0.0878,Zn:0.0458,As:0.00277,Se:0.058,Mo:0.321,Cd:0.00144,Pb:0.00015},
-    "17.06.2025": {Al:"<0.01",V:0.00088,Cr:0.00100,Fe:0.984,Mn:0.0072,Co:0.00052,Ni:0.00957,Cu:0.0547,Zn:0.0116,As:0.00295,Se:0.089,Mo:0.558,Cd:0.00213,Pb:"<0.0001"},
-    "15.07.2025": {Al:0.0398,V:0.00264,Cr:0.00283,Fe:1.415,Mn:0.0041,Co:0.0006055,Ni:0.00671,Cu:0.0401,Zn:0.0684,As:0.00518,Se:0.100,Mo:0.509,Cd:0.00204,Pb:0.00013},
-    "12.08.2025": {Al:0.0265,V:0.00194,Cr:0.00881,Fe:1.479,Mn:0.0051,Co:0.0007245,Ni:0.02374,Cu:0.0369,Zn:0.0105,As:0.00406,Se:0.130,Mo:0.561,Cd:0.00228,Pb:"<0.0001"},
-    "16.09.2025": {Al:0.0151,V:0.00094,Cr:0.00750,Fe:1.638,Mn:0.0075,Co:0.00066738,Ni:0.01494,Cu:0.0488,Zn:0.0134,As:0.00352,Se:0.152,Mo:0.562,Cd:0.00235,Pb:0.00011},
-    "14.10.2025": {Al:0.0117,V:0.00160,Cr:0.00346,Fe:2.515,Mn:0.0087,Co:0.0013768,Ni:0.03785,Cu:0.0632,Zn:0.0451,As:0.00476,Se:0.192,Mo:0.644,Cd:0.00348,Pb:"<0.0001"},
-    "18.11.2025": {Al:0.0104,V:0.00095,Cr:0.00324,Fe:1.349,Mn:0.0040,Co:0.000982,Ni:0.02937,Cu:0.0395,Zn:0.0147,As:0.00362,Se:0.170,Mo:0.590,Cd:0.00375,Pb:0.00012},
-  },
-  P5: {
-    "29.01.2025": {Al:0.0584,V:0.000668,Cr:0.00213,Fe:0.661,Mn:0.0302,Co:0.00048,Ni:0.00453,Cu:0.0138,Zn:0.0347,As:0.00182,Se:0.0368,Mo:0.183,Cd:0.0005811,Pb:0.0005043},
-    "25.02.2025": {Al:0.0398,V:0.000758,Cr:0.00099,Fe:0.538,Mn:0.0280,Co:0.0004947,Ni:0.00247,Cu:0.0091,Zn:0.0120,As:0.00184,Se:0.0321,Mo:0.181,Cd:0.0005628,Pb:0.0001137},
-    "25.03.2025": {Al:"<0.01",V:0.001388,Cr:0.00101,Fe:0.354,Mn:0.1612,Co:0.0008662,Ni:0.00312,Cu:0.0163,Zn:0.0011,As:0.00329,Se:0.0106,Mo:0.291,Cd:0.0011208,Pb:"<0.0001"},
-    "22.04.2025": {Al:"<0.01",V:0.000872,Cr:0.00121,Fe:0.627,Mn:0.0602,Co:0.0019362,Ni:0.00581,Cu:0.0255,Zn:0.0342,As:0.00312,Se:0.0248,Mo:0.526,Cd:0.0020904,Pb:0.0003234},
-    "17.06.2025": {Al:"<0.01",V:0.000305,Cr:0.00065,Fe:0.200,Mn:0.0391,Co:0.0007358,Ni:0.00312,Cu:0.0099,Zn:0.0053,As:0.00105,Se:0.0036,Mo:0.145,Cd:0.0005538,Pb:0.0002654},
-    "16.09.2025": {Al:0.0429,V:0.001717,Cr:0.01137,Fe:0.813,Mn:0.1764,Co:0.0008325,Ni:0.00888,Cu:0.0166,Zn:0.0426,As:0.00466,Se:0.0423,Mo:0.393,Cd:0.001595736,Pb:0.000365301},
-    "14.10.2025": {Al:0.0299,V:0.001780,Cr:0.00252,Fe:0.857,Mn:0.0912,Co:0.0008024,Ni:0.01287,Cu:0.0110,Zn:0.0390,As:0.00263,Se:0.0317,Mo:0.216,Cd:0.0013984,Pb:0.0002468},
-    "18.11.2025": {Al:"<0.01",V:0.000885,Cr:0.00132,Fe:0.608,Mn:0.0684,Co:0.0025116,Ni:0.01468,Cu:0.0049,Zn:0.0125,As:0.00313,Se:0.0168,Mo:0.362,Cd:0.0020847,Pb:"<0.0001"},
-  },
-  P6: {
-    "29.01.2025": {Al:0.00340,V:0.000903,Cr:0.00242,Fe:1.892,Mn:0.172,Co:0.0008625,Ni:0.00871,Cu:0.00946,Zn:0.00561,As:0.00273,Se:0.214,Mo:1.183,Cd:0.00357,Pb:0.0002665},
-    "25.02.2025": {Al:0.00139,V:0.000890,Cr:0.00021,Fe:1.730,Mn:0.221,Co:0.000859,Ni:0.00569,Cu:0.01013,Zn:0.00685,As:0.00259,Se:0.200,Mo:1.175,Cd:0.00363,Pb:"<0.0001"},
-    "25.03.2025": {Al:"<0.01",V:0.001040,Cr:0.00122,Fe:1.610,Mn:0.153,Co:0.0007615,Ni:0.00987,Cu:0.01243,Zn:0.00261,As:0.00323,Se:0.184,Mo:1.270,Cd:0.00551,Pb:"<0.0001"},
-    "22.04.2025": {Al:"<0.01",V:0.000784,Cr:0.00143,Fe:0.837,Mn:0.037,Co:0.0003788,Ni:0.00557,Cu:0.02199,Zn:0.02211,As:0.00291,Se:0.087,Mo:0.825,Cd:0.00331,Pb:0.00015},
-    "13.05.2025": {Al:"<0.01",V:0.000838,Cr:0.00163,Fe:1.244,Mn:0.039,Co:0.000523,Ni:0.00753,Cu:0.04593,Zn:0.04259,As:0.00469,Se:0.146,Mo:1.017,Cd:0.00413,Pb:"<0.0001"},
-    "17.06.2025": {Al:"<0.01",V:0.000845,Cr:0.00095,Fe:1.530,Mn:0.067,Co:0.0007865,Ni:0.01457,Cu:0.03926,Zn:0.00887,As:0.00320,Se:0.154,Mo:1.166,Cd:0.00423,Pb:"<0.0001"},
-    "15.07.2025": {Al:"<0.01",V:0.000470,Cr:0.00012,Fe:1.154,Mn:0.055,Co:0.0005595,Ni:0.00609,Cu:0.03832,Zn:0.08827,As:0.00255,Se:0.116,Mo:0.804,Cd:0.00296,Pb:0.0001055},
-    "12.08.2025": {Al:0.02349,V:0.001018,Cr:0.00843,Fe:1.808,Mn:0.094,Co:0.000911,Ni:0.01573,Cu:0.04427,Zn:0.01057,As:0.00308,Se:0.192,Mo:1.100,Cd:0.00438,Pb:"<0.0001"},
-    "16.09.2025": {Al:0.02310,V:0.001046,Cr:0.00870,Fe:1.784,Mn:0.008,Co:0.000779868,Ni:0.01785,Cu:0.05673,Zn:0.01645,As:0.00382,Se:0.166,Mo:0.608,Cd:0.00250,Pb:0.00031374},
-    "14.10.2025": {Al:0.01040,V:0.001746,Cr:0.00278,Fe:2.727,Mn:0.008,Co:0.0014295,Ni:0.04257,Cu:0.07126,Zn:0.07122,As:0.00535,Se:0.218,Mo:0.719,Cd:0.00378,Pb:0.000199},
-    "18.11.2025": {Al:"<0.01",V:0.000910,Cr:0.00421,Fe:1.543,Mn:0.091,Co:0.001241,Ni:0.03748,Cu:0.02926,Zn:0.00633,As:0.00318,Se:0.228,Mo:0.990,Cd:0.00595,Pb:"<0.0001"},
-  },
-  P7: {
-    "29.01.2025": {Al:0.00761,V:0.000837,Cr:0.00151,Fe:0.507,Mn:0.0472,Co:0.0003594,Ni:0.00305,Cu:0.00965,Zn:0.00735,As:0.00170,Se:0.0287,Mo:0.216,Cd:0.0006732,Pb:0.0001864},
-    "25.03.2025": {Al:"<0.01",V:0.001255,Cr:0.00084,Fe:0.596,Mn:0.0649,Co:0.0010596,Ni:0.00434,Cu:0.00841,Zn:0.00278,As:0.00290,Se:0.0167,Mo:0.301,Cd:0.0014217,Pb:"<0.0001"},
-    "22.04.2025": {Al:"<0.01",V:0.001298,Cr:0.00133,Fe:0.725,Mn:0.0884,Co:0.0015717,Ni:0.00574,Cu:0.01500,Zn:0.02495,As:0.00299,Se:0.0261,Mo:0.563,Cd:0.0022197,Pb:0.0001782},
-    "13.05.2025": {Al:0.0196126,V:0.000474,Cr:0.00096,Fe:0.196,Mn:0.0291,Co:0.0004301,Ni:0.00207,Cu:0.01232,Zn:0.04705,As:0.00116,Se:0.0061,Mo:0.132,Cd:0.0005893,Pb:0.0006539},
-    "17.06.2025": {Al:"<0.01",V:0.000298,Cr:0.00051,Fe:0.123,Mn:0.0194,Co:0.0002839,Ni:0.00214,Cu:0.00739,Zn:0.00490,As:0.00060,Se:0.0030,Mo:0.062,Cd:0.0002644,Pb:0.0001263},
-    "15.07.2025": {Al:0.0188103,V:0.001158,Cr:0.00160,Fe:0.608,Mn:0.0556,Co:0.000987,Ni:0.00437,Cu:0.01950,Zn:0.15753,As:0.00355,Se:0.0219,Mo:0.384,Cd:0.0014212,Pb:0.0002997},
-    "12.08.2025": {Al:0.031303,V:0.001577,Cr:0.00825,Fe:0.581,Mn:0.0336,Co:0.0006658,Ni:0.01028,Cu:0.00718,Zn:0.00446,As:0.00320,Se:0.0162,Mo:0.341,Cd:0.0012894,Pb:"<0.0001"},
-    "16.09.2025": {Al:0.042712911,V:0.001648,Cr:0.01058,Fe:0.783,Mn:0.1713,Co:0.000791541,Ni:0.00758,Cu:0.01653,Zn:0.05250,As:0.00452,Se:0.0427,Mo:0.390,Cd:0.001635696,Pb:0.000404262},
-    "14.10.2025": {Al:0.023441,V:0.001926,Cr:0.00221,Fe:0.892,Mn:0.0940,Co:0.0007786,Ni:0.01264,Cu:0.01073,Zn:0.02752,As:0.00278,Se:0.0329,Mo:0.221,Cd:0.0012372,Pb:0.0001802},
-    "18.11.2025": {Al:"<0.01",V:0.000818,Cr:0.00269,Fe:0.381,Mn:0.0493,Co:0.001007124,Ni:0.01092,Cu:0.01097,Zn:0.00602,As:0.00246,Se:0.0222,Mo:0.269,Cd:0.001631904,Pb:0.000255786},
-  },
-};
-
-/* ===================================================
-   3B) ՖԻԶԻԿԱՔԻՄԻԱԿԱՆ/ԱՂԱՅԻՆ ՏՎՅԱԼՆԵՐ (ԼՐԱՑՆԵԼ ՔՈ ԹՎԵՐԸ)
-   Կառուցվածք՝ physchemData[pointId][date][indicator] = value
-   Օրինակ՝
-   physchemData.P1["25.03.2025"] = {pH:8.2, EC:420, TDS:260, Cl:18, SO4:32, ...}
-   =================================================== */
-
-const physchemData = {
-  P1: {
-    // "25.03.2025": {pH: 8.2, EC: 410, TDS: 255, Turbidity: 3.1, Cl: 18, SO4: 32, NO3: 4.2},
-  },
-  P2: {},
-  P3: {},
-  P4: {},
-  P5: {},
-  P6: {},
-  P7: {
-    // "25.03.2025": {pH: 8.0, EC: 560, TDS: 350, Turbidity: 7.8, Cl: 28, SO4: 55, NO3: 6.1},
-  },
-};
-
-/* =========================================
-   4) ՔԱՐՏԵԶ
-   ========================================= */
-
-const map = L.map("map").setView([39.152, 46.155], 13);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "© OpenStreetMap"
-}).addTo(map);
-
-function addPointsToMap(){
-  pointsMeta.forEach(p=>{
-    const st = typeStyle[p.type] || {color:"#333", radius:6};
-    const popupLines = [];
-    popupLines.push(`<b>${p.name}</b>`);
-    popupLines.push(`Կոորդ․ ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}`);
-
-    const dts = Object.keys(data[p.id] || {});
-    if(dts.length){
-      const last = sortDates(dts).slice(-1)[0];
-      const row = data[p.id][last] || {};
-      popupLines.push(`<hr style="margin:6px 0">Վերջին չափում՝ <b>${last}</b>`);
-      ["Cu","Zn","Mn","Fe","Mo","Cd","Pb"].forEach(m=>{
-        if(row[m]!==undefined) popupLines.push(`${m}: ${row[m]}`);
-      });
-    }
-
-    L.circleMarker([p.lat,p.lon], {radius:st.radius, color:st.color, fillOpacity:0.95})
-      .addTo(map)
-      .bindPopup(popupLines.join("<br>"));
+  // dates in dd.mm.yyyy
+  return dates.slice().sort((a,b)=>{
+    const [da,ma,ya] = a.split(".").map(Number);
+    const [db,mb,yb] = b.split(".").map(Number);
+    const A = new Date(ya, ma-1, da).getTime();
+    const B = new Date(yb, mb-1, db).getTime();
+    return A-B;
   });
 }
-addPointsToMap();
 
-/* =========================================
-   5) UI՝ ցուցակներ
-   ========================================= */
-
-const metalSelect = document.getElementById("metalSelect");
-METALS.forEach(m=>{
-  const opt = document.createElement("option");
-  opt.value = m;
-  opt.textContent = m;
-  metalSelect.appendChild(opt);
-});
-metalSelect.value = "Cu";
-
-const physSelect = document.getElementById("physSelect");
-PHYS.forEach(k=>{
-  const opt = document.createElement("option");
-  opt.value = k;
-  const unit = displayUnits[k] ? ` (${displayUnits[k]})` : "";
-  opt.textContent = `${k}${unit}`;
-  physSelect.appendChild(opt);
-});
-physSelect.value = "EC";
-
-/* =========================================
-   6) ԳՐԱՖԻԿՆԵՐ
-   ========================================= */
-
-let tsChart=null, srcPctChart=null, persistChart=null, physPersistChart=null;
-
-function buildTimeSeries(metal){
-  const allDates = uniq(pointsMeta.flatMap(p=>Object.keys(data[p.id] || {})));
-  const labels = sortDates(allDates);
-
-  const datasets = pointsMeta.map(p=>{
-    const series = labels.map(d=>{
-      const v = data[p.id]?.[d]?.[metal];
-      return parseValue(v);
-    });
-    return {label:p.name, data:series, tension:0.25};
-  });
-
-  return {labels, datasets};
+function intersectDates(aDates, bDates){
+  const setB = new Set(bDates);
+  return aDates.filter(d => setB.has(d));
 }
 
-// Δ(1->3) = բացահանք ազդեցություն, Δ(3->5)=Սպիտակ ջուր, Δ(5->7)=Դարազամ/այլ
-function calcSourcePctByIncrements(metal){
-  const P1="P1", P3="P3", P5="P5", P7="P7";
+/** ========= Data (only phys-chem + saline indicators you requested) ========= **/
+const stations = {
+  background: {
+    name: "Ողջի ջրառ (Ֆոնային)",
+    data: {
+      "Թափանցիկություն (աստիճան)": {
+        "25.03.2025": "31","22.04.2025":"31","13.05.2025":"31","17.06.2025":"31","15.07.2025":"31","12.08.2025":"31","16.09.2025":"31","14.10.2025":"31","18.11.2025":"31"
+      },
+      "Կախութային չոր նյութեր (մգ/լ)": {
+        "25.03.2025":"12.5","22.04.2025":"36.1","13.05.2025":"16","17.06.2025":"6.3","15.07.2025":"8.8","12.08.2025":"10.8","16.09.2025":"9","14.10.2025":"17.7","18.11.2025":"3.2"
+      },
+      "Ջրածնային ցուցիչ (pH)": {
+        "25.03.2025":"8.05","22.04.2025":"7.64","13.05.2025":"7.57","17.06.2025":"7.54","15.07.2025":"7.736","12.08.2025":"8.2","16.09.2025":"7.88","14.10.2025":"8.058","18.11.2025":"7.993"
+      },
+      "Ընդհանուր կոշտություն (մգ/լ)": {
+        "25.03.2025":"2.0251","22.04.2025":"0.9905","13.05.2025":"0.6673","17.06.2025":"0.6705","15.07.2025":"1.0249","12.08.2025":"3.2071","16.09.2025":"1.8228","14.10.2025":"2.1174","18.11.2025":"1.6011"
+      },
 
-  function meanOverCommon(a,b){
-    const da = Object.keys(data[a]||{});
-    const db = Object.keys(data[b]||{});
-    const common = da.filter(x=>db.includes(x));
-    const xs = common.map(d=>{
-      const va = parseValue(data[a][d]?.[metal]);
-      const vb = parseValue(data[b][d]?.[metal]);
-      if(!Number.isFinite(va) || !Number.isFinite(vb)) return null;
-      return vb - va;
-    }).filter(x=>Number.isFinite(x));
-    return average(xs);
-  }
-
-  const incOpenPit = meanOverCommon(P1, P3);
-  const incSpitak  = meanOverCommon(P3, P5);
-  const incAfter   = meanOverCommon(P5, P7);
-
-  const total = [incOpenPit,incSpitak,incAfter]
-    .map(x=>Number.isFinite(x)?x:0)
-    .reduce((a,b)=>a+b,0);
-
-  const pct = (x)=> (total>0 ? (x/total)*100 : 0);
-
-  return {
-    labels: ["Բացահանք (2→3)", "Սպիտակ ջուր (4→5)", "Դարազամ/այլ (6→7)"],
-    values: [pct(incOpenPit), pct(incSpitak), pct(incAfter)],
-    raw: {incOpenPit, incSpitak, incAfter, total}
-  };
-}
-
-function buildPersist(metal){
-  const labels = [];
-  const bg = [];
-  const ds = [];
-
-  const d1 = Object.keys(data.P1||{});
-  const d7 = Object.keys(data.P7||{});
-  const common = sortDates(d1.filter(x=>d7.includes(x)));
-
-  common.forEach(d=>{
-    labels.push(d);
-    bg.push(parseValue(data.P1[d]?.[metal]));
-    ds.push(parseValue(data.P7[d]?.[metal]));
-  });
-
-  return {labels, bg, ds};
-}
-
-function buildPhysPersist(ind){
-  const labels = [];
-  const bg = [];
-  const ds = [];
-
-  const d1 = Object.keys(physchemData.P1||{});
-  const d7 = Object.keys(physchemData.P7||{});
-  const common = sortDates(d1.filter(x=>d7.includes(x)));
-
-  common.forEach(d=>{
-    labels.push(d);
-    bg.push(parseValue(physchemData.P1[d]?.[ind]));
-    ds.push(parseValue(physchemData.P7[d]?.[ind]));
-  });
-
-  return {labels, bg, ds};
-}
-
-function renderCharts(){
-  const metal = metalSelect.value;
-
-  // time series
-  const ts = buildTimeSeries(metal);
-  const ctx1 = document.getElementById("tsChart").getContext("2d");
-  if(tsChart) tsChart.destroy();
-  tsChart = new Chart(ctx1, {
-    type: "line",
-    data: {labels: ts.labels, datasets: ts.datasets},
-    options: {
-      responsive: false,
-      plugins: {legend:{display:true}},
-      scales: {
-        y: {beginAtZero:true, title:{display:true, text:`${metal} (mg/L)`}}
+      "Կարբոնատ (մգ/լ)": {
+        "25.03.2025":"14.25","22.04.2025":"12","13.05.2025":"12","17.06.2025":"9","15.07.2025":"13.5","12.08.2025":"18","16.09.2025":"15","14.10.2025":"15","18.11.2025":"14.25"
+      },
+      "Սուլֆատ իոն (մգ/լ)": {
+        "25.03.2025":"23.56","22.04.2025":"9.48","13.05.2025":"6.58","17.06.2025":"7.71","15.07.2025":"9.64","12.08.2025":"45.05","16.09.2025":"21.30","14.10.2025":"23.71","18.11.2025":"21.57"
+      },
+      "Քլորիդ իոն (մգ/լ)": {
+        "25.03.2025":"6.23","22.04.2025":"2.16","13.05.2025":"1.38","17.06.2025":"1.22","15.07.2025":"1.11","12.08.2025":"4.51","16.09.2025":"3.53","14.10.2025":"3.98","18.11.2025":"3.88"
+      },
+      "Ֆտորիդ իոն (մգ/լ)": {
+        "25.03.2025":"0.2358","22.04.2025":"0.085","13.05.2025":"0.1013","17.06.2025":"0.0555","15.07.2025":"0.08","12.08.2025":"0.18","16.09.2025":"0.116","14.10.2025":"0.097","18.11.2025":"0.108"
+      },
+      "Նիտրատ իոն (մգ/լ)": {
+        "25.03.2025":"2.1888","22.04.2025":"2.419","13.05.2025":"1.5849","17.06.2025":"1.3139","15.07.2025":"0.495","12.08.2025":"0.33","16.09.2025":"0.535","14.10.2025":"0.653","18.11.2025":"1.321"
+      },
+      "Նիտրիտ իոն (մգ/լ)": {
+        "25.03.2025":"<0.013","22.04.2025":"<0.013","13.05.2025":"<0.013","17.06.2025":"0.013724211","15.07.2025":"<0.013","12.08.2025":"0.01451602","16.09.2025":"0.008997533","14.10.2025":"0.009477401","18.11.2025":"0.01982273"
+      },
+      "Ամոնիում իոն (մգ/լ)": {
+        "25.03.2025":"0.097","22.04.2025":"0.104","13.05.2025":"0.060","17.06.2025":"0.055","15.07.2025":"0.038","12.08.2025":"0.177","16.09.2025":"0.067","14.10.2025":"0.149","18.11.2025":"0.033"
+      },
+      "Ընդհանուր անօրգանական ազոտ (մգ N/լ)": {
+        "25.03.2025":"0.571","22.04.2025":"0.627","13.05.2025":"0.405","17.06.2025":"0.344","15.07.2025":"0.141","12.08.2025":"0.217","16.09.2025":"0.176","14.10.2025":"0.266","18.11.2025":"0.330"
+      },
+      "Ֆոսֆատներ (մգ/լ)": {
+        "25.03.2025":"0.00467172","22.04.2025":"0.0103816","13.05.2025":"0.00484065","17.06.2025":"0.00484065","15.07.2025":"0.010757","12.08.2025":"0.03029376","16.09.2025":"0.0784392","14.10.2025":"0.01514688","18.11.2025":"<0.004"
+      },
+      "ԹԿՊ5 (BOD5) (մգ/լ)": {
+        "25.03.2025":"2.34","22.04.2025":"2.67","13.05.2025":"2.57","17.06.2025":"1.89","15.07.2025":"1.81","12.08.2025":"1.51","16.09.2025":"2.46","14.10.2025":"3.4","18.11.2025":"4.14"
+      },
+      "Բիքրոմատային օքսիդացում (COD) (մգ Օ/լ)": {
+        "25.03.2025":"10","22.04.2025":"10","13.05.2025":"50","17.06.2025":"5","15.07.2025":"5","12.08.2025":"10","16.09.2025":"10","14.10.2025":"5","18.11.2025":"5"
+      },
+      "Տեսակարար էլեկտրահաղորդականություն (µS/սմ)": {
+        "25.03.2025":"314","22.04.2025":"140.9","13.05.2025":"83.2","17.06.2025":"82.6","15.07.2025":"119.4","12.08.2025":"402","16.09.2025":"227","14.10.2025":"257","18.11.2025":"261"
+      },
+      "Հիդրոկարբոնատ իոն (մգ/լ)": {
+        "25.03.2025":"140.35","22.04.2025":"54.92","13.05.2025":"33.56","17.06.2025":"53.69","15.07.2025":"54.92","12.08.2025":"189.16","16.09.2025":"106.79","14.10.2025":"122.04","18.11.2025":"112.89"
+      },
+      "Հանքայնացում (ԸԼՆ) (մգ/լ)": {
+        "25.03.2025":"204","22.04.2025":"92","13.05.2025":"54","17.06.2025":"36.612","15.07.2025":"77.61","12.08.2025":"261.3","16.09.2025":"147.55","14.10.2025":"167.05","18.11.2025":"169.65"
       }
     }
-  });
+  },
 
-  // source pct
-  const sp = calcSourcePctByIncrements(metal);
-  const ctx2 = document.getElementById("srcPctChart").getContext("2d");
-  if(srcPctChart) srcPctChart.destroy();
-  srcPctChart = new Chart(ctx2, {
-    type: "bar",
+  endpoint: {
+    name: "Դարազամ/Ձորատեղ (վերջնակետ)",
     data: {
-      labels: sp.labels,
-      datasets: [{label: `${metal}՝ աճի բաժանում (%)`, data: sp.values}]
-    },
-    options: {
-      responsive: false,
-      scales: {y:{beginAtZero:true, max:100, title:{display:true,text:"%"}}}
-    }
-  });
+      "Թափանցիկություն (աստիճան)": {
+        "29.01.2025":"31","25.02.2025":"3","25.03.2025":"31","22.04.2025":"4","13.05.2025":"31","17.06.2025":"31","15.07.2025":"31","12.08.2025":"31","16.09.2025":"31","14.10.2025":"31","18.11.2025":"31"
+      },
+      "Կախութային չոր նյութեր (մգ/լ)": {
+        "29.01.2025":"34.9","25.02.2025":"520.9","25.03.2025":"37.2","22.04.2025":"247.2","13.05.2025":"33","17.06.2025":"31.7","15.07.2025":"33.4","12.08.2025":"21.8","16.09.2025":"43.3","14.10.2025":"45.1","18.11.2025":"17.1"
+      },
+      "Ջրածնային ցուցիչ (pH)": {
+        "29.01.2025":"8.18","25.02.2025":"8.09","25.03.2025":"8.22","22.04.2025":"8.07","13.05.2025":"8.04","17.06.2025":"8.06","15.07.2025":"7.987","12.08.2025":"7.998","16.09.2025":"8.017","14.10.2025":"8.105","18.11.2025":"8.096"
+      },
+      "Ընդհանուր կոշտություն (մգ/լ)": {
+        "29.01.2025":"37.48","25.02.2025":"34.58","25.03.2025":"20.67","22.04.2025":"15.05","13.05.2025":"16.85","17.06.2025":"23.18","15.07.2025":"23.71","12.08.2025":"28.87","16.09.2025":"26.21","14.10.2025":"32.40","18.11.2025":"32.53"
+      },
 
-  // metal persistence
-  const ps = buildPersist(metal);
-  const ctx3 = document.getElementById("persistChart").getContext("2d");
-  if(persistChart) persistChart.destroy();
-  persistChart = new Chart(ctx3, {
-    type: "line",
-    data: {
-      labels: ps.labels,
-      datasets: [
-        {label:`Ֆոնային (P1) — ${metal}`, data: ps.bg, tension:0.25},
-        {label:`Վերջնակետ (P7) — ${metal}`, data: ps.ds, tension:0.25}
-      ]
-    },
-    options: {
-      responsive:false,
-      plugins:{legend:{display:true}},
-      scales:{y:{beginAtZero:true, title:{display:true,text:`${metal} (mg/L)`}}}
-    }
-  });
-
-  renderSummary(metal, sp);
-}
-
-function renderPhysPersist(){
-  const ind = physSelect.value;
-  const unit = displayUnits[ind] ? ` (${displayUnits[ind]})` : "";
-
-  const ps = buildPhysPersist(ind);
-  const ctx = document.getElementById("physPersistChart").getContext("2d");
-  if(physPersistChart) physPersistChart.destroy();
-
-  physPersistChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: ps.labels,
-      datasets: [
-        {label:`Ֆոնային (P1) — ${ind}${unit}`, data: ps.bg, tension:0.25},
-        {label:`Վերջնակետ (P7) — ${ind}${unit}`, data: ps.ds, tension:0.25}
-      ]
-    },
-    options: {
-      responsive:false,
-      plugins:{legend:{display:true}},
-      scales:{y:{beginAtZero:false, title:{display:true, text:`${ind}${unit}`}}}
-    }
-  });
-
-  // պարզ տեքստային ամփոփում՝ P7/P1 հարաբերակցություն
-  const d1 = Object.keys(physchemData.P1||{});
-  const d7 = Object.keys(physchemData.P7||{});
-  const common = d1.filter(x=>d7.includes(x));
-
-  const ratios = common.map(d=>{
-    const a = parseValue(physchemData.P1[d]?.[ind]);
-    const b = parseValue(physchemData.P7[d]?.[ind]);
-    if(!Number.isFinite(a) || !Number.isFinite(b)) return null;
-    // pH-ի համար հարաբերակցությունը միշտ իմաստ չունի, բայց թող հաշվի՝ «տարբերություն»
-    if(ind==="pH") return b - a; // ΔpH
-    if(a===0) return null;
-    return b/a; // ratio
-  }).filter(x=>Number.isFinite(x));
-
-  const mean = average(ratios);
-
-  let text = "";
-  if(!common.length){
-    text = `<p><b>${ind}</b> ցուցիչի համար P1 և P7 կետերում համընկնող ամսաթվեր այս պահին չկան։ Լրացրու physchemData-ում։</p>`;
-  } else if(!Number.isFinite(mean)){
-    text = `<p><b>${ind}</b> ցուցիչի տվյալները մասամբ բացակայում են։ Լրացրու physchemData-ում՝ որպեսզի հաշվարկվի միջին փոփոխությունը։</p>`;
-  } else {
-    if(ind==="pH"){
-      const delta = mean;
-      let verdict = "փոքր փոփոխություն";
-      if(Math.abs(delta) >= 0.5) verdict = "զգալի փոփոխություն";
-      if(Math.abs(delta) >= 1.0) verdict = "ուժեղ փոփոխություն (ուշադրություն պահանջող)";
-      text = `
-        <p>
-          <b>${ind}</b>-ի համար միջին տարբերությունը (P7 − P1) ≈ <b>${delta.toFixed(2)}</b>։
-          Սա ցույց է տալիս՝ <b>${verdict}</b>։
-        </p>
-        <p class="small">Նշում․ pH-ը լոգարիթմական սանդղակ է, ուստի «հարաբերակցություն»-ը միշտ ճիշտ մեկնաբանություն չէ։</p>
-      `;
-    } else {
-      const ratio = mean;
-      let verdict = "ֆոնայինին մոտ";
-      if(ratio >= 1.2) verdict = "միջին աճ/պահպանություն կա";
-      if(ratio >= 2.0) verdict = "բարձր աճ/պահպանություն կա (ուշադրություն պահանջող)";
-      if(ratio <= 0.8) verdict = "նվազում կա վերջնակետում";
-      text = `
-        <p>
-          <b>${ind}</b> ցուցիչի համար միջին հարաբերակցությունը (P7/P1) ≈ <b>${ratio.toFixed(2)}</b>։
-          Արդյունք՝ <b>${verdict}</b>։
-        </p>
-        <p class="small">
-          Եթե ուզում ես «էկոլոգիական դասով» գնահատում (I–V), ուղարկիր այդ ցուցիչների համար կիրառվող դասակարգման սանդղակը (քո աղյուսակի դասերը)՝ և կավելացնեմ ավտոմատ գնահատիչ։
-        </p>
-      `;
+      "Կարբոնատ (մգ/լ)": {
+        "29.01.2025":"21.75","25.02.2025":"24.75","25.03.2025":"26.25","22.04.2025":"21.75","13.05.2025":"23.25","17.06.2025":"28.5","15.07.2025":"30.75","12.08.2025":"30.75","16.09.2025":"32.25","14.10.2025":"30.75","18.11.2025":"27"
+      },
+      "Սուլֆատ իոն (մգ/լ)": {
+        "29.01.2025":"1463.16","25.02.2025":"1410.75","25.03.2025":"815.97","22.04.2025":"538.89","13.05.2025":"495.10","17.06.2025":"723.14","15.07.2025":"885.74","12.08.2025":"1093.59","16.09.2025":"940.38","14.10.2025":"1130.79","18.11.2025":"1398.69"
+      },
+      "Քլորիդ իոն (մգ/լ)": {
+        "29.01.2025":"45.98","25.02.2025":"42.72","25.03.2025":"61.56","22.04.2025":"52.88","13.05.2025":"64.72","17.06.2025":"61.22","15.07.2025":"42.38","12.08.2025":"42.73","16.09.2025":"37.64","14.10.2025":"44.31","18.11.2025":"46.25"
+      },
+      "Ֆտորիդ իոն (մգ/լ)": {
+        "29.01.2025":"3.159","25.02.2025":"3.076","25.03.2025":"1.6272","22.04.2025":"0.988","13.05.2025":"1.3946","17.06.2025":"1.3635","15.07.2025":"2.229","12.08.2025":"2.258","16.09.2025":"2.415","14.10.2025":"2.445","18.11.2025":"2.421"
+      },
+      "Նիտրատ իոն (մգ/լ)": {
+        "29.01.2025":"70.70","25.02.2025":"80.04","25.03.2025":"69.27","22.04.2025":"37.66","13.05.2025":"38.03","17.06.2025":"56.38","15.07.2025":"47.16","12.08.2025":"60.59","16.09.2025":"34.51","14.10.2025":"52.40","18.11.2025":"116.24"
+      },
+      "Նիտրիտ իոն (մգ/լ)": {
+        "29.01.2025":"<0.013","25.02.2025":"0.057437171","25.03.2025":"0.035544079","22.04.2025":"<0.013","13.05.2025":"0.013724211","17.06.2025":"0.020456842","15.07.2025":"<0.013","12.08.2025":"0.040069013","16.09.2025":"0.02651273","14.10.2025":"0.030231711","18.11.2025":"0.039037401"
+      },
+      "Ամոնիում իոն (մգ/լ)": {
+        "29.01.2025":"2.288","25.02.2025":"1.543","25.03.2025":"3.341","22.04.2025":"0.998","13.05.2025":"2.137","17.06.2025":"1.179","15.07.2025":"1.135","12.08.2025":"3.153","16.09.2025":"4.575","14.10.2025":"1.550","18.11.2025":"1.754"
+      },
+      "Ընդհանուր անօրգանական ազոտ (մգ N/լ)": {
+        "29.01.2025":"17.74","25.02.2025":"19.29","25.03.2025":"18.25","22.04.2025":"9.28","13.05.2025":"10.25","17.06.2025":"13.65","15.07.2025":"11.53","12.08.2025":"16.15","16.09.2025":"11.36","14.10.2025":"13.05","18.11.2025":"27.62"
+      },
+      "Ֆոսֆատներ (մգ/լ)": {
+        "29.01.2025":"<0.004","25.02.2025":"0.01349608","25.03.2025":"0.012977","22.04.2025":"0.01712964","13.05.2025":"0.01237055","17.06.2025":"0.00484065","15.07.2025":"0.0204383","12.08.2025":"0.02867088","16.09.2025":"0.10927392","14.10.2025":"0.10386432","18.11.2025":"0.01612558"
+      },
+      "ԹԿՊ5 (BOD5) (մգ/լ)": {
+        "29.01.2025":"3.33","25.02.2025":"3.34","25.03.2025":"3.09","22.04.2025":"2.44","13.05.2025":"2.26","17.06.2025":"2.08","15.07.2025":"1.62","12.08.2025":"2.21","16.09.2025":"3.31","14.10.2025":"3.11","18.11.2025":"4.41"
+      },
+      "Բիքրոմատային օքսիդացում (COD) (մգ Օ/լ)": {
+        "29.01.2025":"15","25.02.2025":"10","25.03.2025":"20","22.04.2025":"10","13.05.2025":"10","17.06.2025":"15","15.07.2025":"15","12.08.2025":"15","16.09.2025":"15","14.10.2025":"20","18.11.2025":"20"
+      },
+      "Տեսակարար էլեկտրահաղորդականություն (µS/սմ)": {
+        "29.01.2025":"3048","25.02.2025":"2966","25.03.2025":"2810","22.04.2025":"1617","13.05.2025":"2006","17.06.2025":"2496","15.07.2025":"2806","12.08.2025":"2978","16.09.2025":"2834","14.10.2025":"2716","18.11.2025":"3396"
+      },
+      "Հիդրոկարբոնատ իոն (մգ/լ)": {
+        "29.01.2025":"329.51","25.02.2025":"256.28","25.03.2025":"237.98","22.04.2025":"210.52","13.05.2025":"250.18","17.06.2025":"1622.40","15.07.2025":"335.61","12.08.2025":"341.71","16.09.2025":"366.12","14.10.2025":"353.92","18.11.2025":"341.71"
+      },
+      "Հանքայնացում (ԸԼՆ) (մգ/լ)": {
+        "29.01.2025":"1981","25.02.2025":"1928","25.03.2025":"1827","22.04.2025":"1051","13.05.2025":"1304","17.06.2025":"305.1","15.07.2025":"1824","12.08.2025":"1935.7","16.09.2025":"1842.1","14.10.2025":"1765.4","18.11.2025":"2207.4"
+      }
     }
   }
+};
 
-  document.getElementById("physSummaryText").innerHTML = text;
+/** ========= Categories ========= **/
+const categories = {
+  "Ֆիզիկաքիմիական": [
+    "Թափանցիկություն (աստիճան)",
+    "Կախութային չոր նյութեր (մգ/լ)",
+    "Ջրածնային ցուցիչ (pH)",
+    "Ընդհանուր կոշտություն (մգ/լ)",
+    "ԹԿՊ5 (BOD5) (մգ/լ)",
+    "Բիքրոմատային օքսիդացում (COD) (մգ Օ/լ)",
+    "Տեսակարար էլեկտրահաղորդականություն (µS/սմ)"
+  ],
+  "Աղային ցուցիչներ": [
+    "Կարբոնատ (մգ/լ)",
+    "Հիդրոկարբոնատ իոն (մգ/լ)",
+    "Սուլֆատ իոն (մգ/լ)",
+    "Քլորիդ իոն (մգ/լ)",
+    "Ֆտորիդ իոն (մգ/լ)",
+    "Հանքայնացում (ԸԼՆ) (մգ/լ)"
+  ],
+  "Ազոտ և ֆոսֆոր": [
+    "Նիտրատ իոն (մգ/լ)",
+    "Նիտրիտ իոն (մգ/լ)",
+    "Ամոնիում իոն (մգ/լ)",
+    "Ընդհանուր անօրգանական ազոտ (մգ N/լ)",
+    "Ֆոսֆատներ (մգ/լ)"
+  ]
+};
+
+/** ========= UI Setup ========= **/
+const elCategory = document.getElementById("category");
+const elIndicator = document.getElementById("indicator");
+const elMode = document.getElementById("mode");
+const btn = document.getElementById("btnUpdate");
+
+function fillCategories(){
+  elCategory.innerHTML = "";
+  Object.keys(categories).forEach((k)=>{
+    const opt = document.createElement("option");
+    opt.value = k; opt.textContent = k;
+    elCategory.appendChild(opt);
+  });
 }
 
-function renderSummary(metal, sp){
-  const d1 = Object.keys(data.P1||{});
-  const d7 = Object.keys(data.P7||{});
-  const common = d1.filter(x=>d7.includes(x));
-  const ratios = common.map(d=>{
-    const a = parseValue(data.P1[d]?.[metal]);
-    const b = parseValue(data.P7[d]?.[metal]);
-    if(!Number.isFinite(a) || !Number.isFinite(b) || a<=0) return null;
-    return b/a;
-  }).filter(x=>Number.isFinite(x));
-  const meanRatio = average(ratios);
+function fillIndicators(){
+  const cat = elCategory.value;
+  const list = categories[cat] || [];
+  elIndicator.innerHTML = "";
+  list.forEach((name)=>{
+    const opt = document.createElement("option");
+    opt.value = name; opt.textContent = name;
+    elIndicator.appendChild(opt);
+  });
+}
 
-  const maxPct = Math.max(...sp.values);
-  const topIdx = sp.values.indexOf(maxPct);
-  const topSource = sp.labels[topIdx] || "—";
+/** ========= Chart ========= **/
+let chart = null;
 
-  let persistenceText = "անորոշ";
-  if(Number.isFinite(meanRatio)){
-    if(meanRatio < 1.2) persistenceText = "ֆոնայինին մոտ է (զգալի պահպանված աճ չի երևում)";
-    else if(meanRatio < 2) persistenceText = "միջին աճ կա (մասամբ պահպանվում է)";
-    else persistenceText = "բարձր աճ կա (պահպանվում է և պահանջում է ուշադրություն)";
+function buildSeries(indName){
+  const bg = stations.background.data[indName] || {};
+  const end = stations.endpoint.data[indName] || {};
+
+  const allDates = sortDates(Array.from(new Set([...Object.keys(bg), ...Object.keys(end)])));
+  const overlapDates = intersectDates(Object.keys(bg), Object.keys(end));
+  const overlapSorted = sortDates(overlapDates);
+
+  const bgParsed = allDates.map(d => parseValue(bg[d] ?? null));
+  const endParsed = allDates.map(d => parseValue(end[d] ?? null));
+
+  return { allDates, bgParsed, endParsed, overlapSorted, bgRaw:bg, endRaw:end };
+}
+
+function updateKPI(indName){
+  const series = buildSeries(indName);
+  const overlap = series.overlapSorted;
+  if(overlap.length === 0){
+    document.getElementById("kpiBg").textContent = "—";
+    document.getElementById("kpiEnd").textContent = "—";
+    document.getElementById("kpiDiff").textContent = "—";
+    document.getElementById("kpiRatio").textContent = "—";
+    return;
   }
+  const last = overlap[overlap.length-1];
+  const bg = parseValue(stations.background.data[indName]?.[last]);
+  const ed = parseValue(stations.endpoint.data[indName]?.[last]);
 
-  const inc1 = sp.raw.incOpenPit, inc2 = sp.raw.incSpitak, inc3 = sp.raw.incAfter;
+  document.getElementById("kpiBg").textContent = `${last}: ${bg.raw ?? "—"}${bg.isBelow ? " (ցածր սահման)" : ""}`;
+  document.getElementById("kpiEnd").textContent = `${last}: ${ed.raw ?? "—"}${ed.isBelow ? " (ցածր սահման)" : ""}`;
 
-  document.getElementById("summaryText").innerHTML = `
-    <p>
-      <b>${metal}</b> մետաղի համար ժամանակային գրաֆիկը ցույց է տալիս տարբեր կետերի միջև տարբերակված վարք։
-      «Աղբյուրների հարաբերական ներդրում» գրաֆիկը հաշվարկված է շղթայական միջին աճերով՝
-      <b>ֆոնային (1) → բացահանքից հետո (3) → Սպիտակ ջրից հետո (5) → վերջնակետ (7)</b>։
-    </p>
+  const diff = (ed.val!==null && bg.val!==null) ? (ed.val - bg.val) : null;
+  const ratio = (ed.val!==null && bg.val!==null && bg.val!==0) ? (ed.val / bg.val) : null;
 
-    <p>
-      Ըստ միջին աճի բաժանման՝ ամենամեծ բաժինը ցույց է տալիս՝
-      <b>${topSource}</b>՝ մոտ <b>${maxPct.toFixed(1)}%</b>։
-    </p>
-
-    <p>
-      Ֆոնայինի (P1) նկատմամբ վերջնակետի (P7) միջին հարաբերակցությունը մոտ է՝
-      <b>${Number.isFinite(meanRatio) ? meanRatio.toFixed(2) : "—"}</b>։
-      Սա նշանակում է՝ <b>${persistenceText}</b>։
-    </p>
-
-    <p class="small">
-      Թվային մանրամասներ (միջին աճ mg/L):<br>
-      Բացահանք ազդեցություն (1→3): <b>${fmt(inc1)}</b> •
-      Սպիտակ ջուր (3→5): <b>${fmt(inc2)}</b> •
-      Դարազամ/այլ (5→7): <b>${fmt(inc3)}</b>
-    </p>
-
-    <p class="small">
-      Նշում․ «որ աղբյուրից քանի % է աղտոտվում» հաշվարկը առավել ճշգրիտ է, երբ ունենք նաև
-      հոսքերի/դեբիտների տվյալներ (Q) յուրաքանչյուր աղբյուրի և գետի համար։ Այստեղ կիրառվել է
-      կոնցենտրացիաների վրա հիմնված համեմատական (շղթայական աճի) մոտեցում։
-    </p>
-  `;
+  document.getElementById("kpiDiff").textContent = formatMaybe(diff);
+  document.getElementById("kpiRatio").textContent = formatMaybe(ratio);
 }
 
-function renderMetalsTable(){
-  const cols = ["Կետ","Ամսաթիվ"].concat(METALS.map(m=>`${m} (mg/L)`));
-  let html = `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+function renderChart(){
+  const indName = elIndicator.value;
+  const mode = elMode.value;
 
-  pointsMeta.forEach(p=>{
-    const dates = sortDates(Object.keys(data[p.id]||{}));
-    dates.forEach(d=>{
-      html += `<tr>
-        <td>${p.name}</td>
-        <td>${d}</td>
-        ${METALS.map(m=>{
-          const v = data[p.id]?.[d]?.[m];
-          const pv = parseValue(v);
-          return `<td>${v===undefined ? "—" : (typeof v==="string" ? v : fmt(pv))}</td>`;
-        }).join("")}
-      </tr>`;
-    });
+  const { allDates, bgParsed, endParsed } = buildSeries(indName);
+
+  const labels = allDates;
+
+  const bgVals = bgParsed.map(x => x.val);
+  const endVals = endParsed.map(x => x.val);
+
+  const ratioVals = labels.map((d, i)=>{
+    const a = bgVals[i];
+    const b = endVals[i];
+    if(a === null || b === null || !Number.isFinite(a) || !Number.isFinite(b) || a === 0) return null;
+    return b / a;
   });
 
-  html += `</tbody></table>`;
-  document.getElementById("tableWrap").innerHTML = html;
+  const data = (mode === "ratio")
+    ? {
+        labels,
+        datasets: [
+          {
+            label: "Վերջնակետ / Ֆոնային",
+            data: ratioVals,
+            spanGaps: true,
+            tension: 0.25
+          }
+        ]
+      }
+    : {
+        labels,
+        datasets: [
+          {
+            label: stations.background.name,
+            data: bgVals,
+            spanGaps: true,
+            tension: 0.25
+          },
+          {
+            label: stations.endpoint.name,
+            data: endVals,
+            spanGaps: true,
+            tension: 0.25
+          }
+        ]
+      };
+
+  const tooltipFooter = (items)=>{
+    // show original raw values and "<" note
+    const idx = items?.[0]?.dataIndex;
+    if(idx === undefined) return "";
+    const d = labels[idx];
+    const bgRaw = stations.background.data[indName]?.[d] ?? "—";
+    const enRaw = stations.endpoint.data[indName]?.[d] ?? "—";
+    if(mode === "ratio"){
+      return `Ֆոնային: ${bgRaw} | Վերջնակետ: ${enRaw}`;
+    }
+    return `Ֆոնային: ${bgRaw} | Վերջնակետ: ${enRaw}`;
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "top" },
+      tooltip: {
+        callbacks: { footer: tooltipFooter }
+      },
+      title: {
+        display: true,
+        text: (mode === "ratio")
+          ? `${indName} — Վերջնակետ/Ֆոնային հարաբերակցություն`
+          : `${indName} — Ֆոնային vs Վերջնակետ`
+      }
+    },
+    scales: {
+      x: { ticks: { maxRotation: 0, autoSkip: true } },
+      y: { beginAtZero: false }
+    }
+  };
+
+  const ctx = document.getElementById("chart");
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, { type: "line", data, options });
+
+  updateKPI(indName);
 }
 
-function renderPhysTable(){
-  const cols = ["Կետ","Ամսաթիվ"].concat(PHYS.map(k=>{
-    const unit = displayUnits[k] ? ` (${displayUnits[k]})` : "";
-    return `${k}${unit}`;
-  }));
+/** ========= Init ========= **/
+fillCategories();
+fillIndicators();
 
-  let html = `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
-
-  pointsMeta.forEach(p=>{
-    const dates = sortDates(Object.keys(physchemData[p.id]||{}));
-    dates.forEach(d=>{
-      html += `<tr>
-        <td>${p.name}</td>
-        <td>${d}</td>
-        ${PHYS.map(k=>{
-          const v = physchemData[p.id]?.[d]?.[k];
-          const pv = parseValue(v);
-          return `<td>${v===undefined ? "—" : (typeof v==="string" ? v : fmt(pv))}</td>`;
-        }).join("")}
-      </tr>`;
-    });
-  });
-
-  html += `</tbody></table>`;
-  document.getElementById("physTableWrap").innerHTML = html;
-}
-
-/* =========================================
-   7) ՉԱՓՍԵՐԻ ԿԱՌԱՎԱՐՈՒՄ
-   ========================================= */
-
-function applyCanvasSize(){
-  const size = document.getElementById("sizeSelect").value;
-  const dims = (size==="medium") ? {w:520,h:340} : {w:420,h:300};
-  ["tsChart","srcPctChart","persistChart","physPersistChart"].forEach(id=>{
-    const c = document.getElementById(id);
-    c.width = dims.w;
-    c.height = dims.h;
-  });
-}
-
-/* =========================================
-   8) ՄԵԿՆԱՐԿ
-   ========================================= */
-
-renderMetalsTable();
-renderPhysTable();
-applyCanvasSize();
-renderCharts();
-renderPhysPersist();
-
-metalSelect.addEventListener("change", ()=>renderCharts());
-physSelect.addEventListener("change", ()=>renderPhysPersist());
-document.getElementById("sizeSelect").addEventListener("change", ()=>{
-  applyCanvasSize();
-  renderCharts();
-  renderPhysPersist();
+elCategory.addEventListener("change", ()=>{
+  fillIndicators();
+  renderChart();
 });
-document.getElementById("recalcBtn").addEventListener("click", ()=>{
-  renderCharts();
-  renderPhysPersist();
-});
+btn.addEventListener("click", renderChart);
+elMode.addEventListener("change", renderChart);
+
+// initial
+renderChart();
 </script>
-
 </body>
 </html>
